@@ -25,6 +25,6 @@ class BasicsTestCase(unittest.TestCase):
     def test_app_is_testing(self):
         """
         tests the configuration setup if it returns true if an application is
-        created 
+        created
         """
         self.assertTrue(current_app.config["TESTING"])
