@@ -39,6 +39,16 @@ def generate_shorten_url():
         return e.broadcast()
 
 
+@api.route('/api/urls')
+@auth.login_required
+def get_urls():
+    """ returns a list of all the long urls ordered by date of creation """
+    url_list = Url.query.order_by(desc(Url.date_added)).all()
+    return jsonify(
+        [Utilities.to_json(url, ['id', 'url_name', 'date_added']) for url in url_list]
+    )
+
+
 @api.route('/api/user/urls')
 @auth.login_required
 @permission
