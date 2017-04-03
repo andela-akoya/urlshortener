@@ -246,3 +246,137 @@ class UserModelTestCase(unittest.TestCase):
             User.check_email_uniqueness("koyexes@gmail.com")
             self.assertEqual("The username 'koyexes@gmail.com' already exist",
                              context.exception.message)
+            
+
+class UrlModelTestCase(unittest.TestCase):
+    def setUp(self):
+        self.user = User(username="koyexes",lastname="koya",
+                         firstname="gabriel",email="koyexes@gmail.com")
+        self.url = Url(url_name="http://www.google.com")
+        self.app = create_app('testing')
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+        g.current_user = self.user
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+    def test_url_name_property_getter(self):
+        """
+        tests the function if it returns the value of the
+        url_name property
+        """
+        self.assertTrue(self.url.name == "http://www.google.com")
+
+    def test_url_name_property_setter(self):
+        """
+        tests the function if it properly sets the value of the
+        url_name property
+        """
+        self.assertTrue(self.url.name == "http://www.google.com")
+        self.url.name = "http://www.facebook.com"
+        self.assertNotEqual(self.url.name, "http://www.google.com")
+        self.assertTrue(self.url.name == "http://www.facebook.com")
+
+    def test_check_url_validity_with_valid_url(self):
+        """
+        tests the function if it return a None for a
+        valid url
+        """
+        self.assertEqual(Url.check_validity("http://www.facebook.com"), None)
+
+    def test_check_url_validity_with_invalid_url(self):
+        """
+        tests the function if it raises a UrlValidationException if an
+        invalid url is passed as argument
+        """
+        expected_output = "Invalid url (Either url is empty or invalid." \
+                          " (Url must include either http:// or https://))"
+        with self.assertRaises(UrlValidationException) as context:
+            Url.check_validity("htt://web")
+            self.assertEqual(expected_output, context.exception.message)
+
+    def test_get_url_by_name(self):
+        """
+        tests the function if it returns a Url object from the database
+        if an existing url name is passed as argument
+        """
+        db.session.add(self.url)
+        db.session.commit()
+        url = Url.get_url_by_name("http://www.google.com")
+        self.assertEqual(url, self.url)
+
+    def test_get_url_by_name_with_non_existing_url_name(self):
+        """
+        tests the function if it returns None if a non existing url name
+        is passed as argument
+        """
+        db.session.add(self.url)
+        db.session.commit()
+        url = Url.get_url_by_name("http://www.jumia.com")
+        self.assertEqual(url, None)
+
+    def test_get_from_json(self):
+        """
+        tests the function if a list containing a url object, a vanity
+        string, and a length is returned if a json formatted data containing
+        a url_name, a vanity string and a length in integer is passed in as
+        argument
+        """
+        json_data = {
+            "url": "http://www.google.com",
+            "vanity_string": "ggle75",
+            "shorten_url_length": 6
+        }
+        output = Url.get_from_json(json_data)
+        self.assertIsInstance(output, list)
+        self.assertIsInstance(output[0], Url)
+        self.assertEqual(output[1], "ggle75")
+
+    def test_get_from_json_with_minimal_json_data(self):
+        """
+        tests the function if a list containing a url object, a None value
+        for both vanity string and length is returned if a json formatted data
+        containing only a url_name is passed in as argument
+        """
+        json_data = {"url": "http://www.google.com"}
+        output = Url.get_from_json(json_data)
+        self.assertIsNone(output[1])
+        self.assertIsNone(output[2])
+        self.assertIsInstance(output[0], Url)
+
+    def test_get_shorten_url(self):
+        """
+        test the function if it returns a shorten url for the long url passed
+        in as argument
+        """
+        output = Url.get_shorten_url(self.url, None, None)
+        self.assertTrue(output)
+
+    def test_get_shorten_url_for_instance(self):
+        """
+        test the function if the shorten url returned for the long url passed
+        in as argument is an instance of the shortenUrl class
+        """
+        g.current_user = self.user
+        output = Url.get_shorten_url(self.url, None, None)
+        self.assertIsInstance(output, ShortenUrl)
+
+    def test_get_shorten_url_with_vanity_string(self):
+        """
+        tests the function if it returns the vanity string passed in as
+        argument as the shorten url rather than generating a short url
+        """
+        output = Url.get_shorten_url(self.url, "facebk", None)
+        self.assertEqual(output.name, "facebk")
+
+    def test_get_shorten_url_with_short_url_length(self):
+        """
+        tests the function if it returns a short url whose length is
+        equal to the value of the short_url_length argument.
+        """
+        output = Url.get_shorten_url(self.url, None, 10)
+        self.assertEqual(len(output.name), 10)
