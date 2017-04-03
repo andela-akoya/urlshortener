@@ -287,9 +287,6 @@ class APITestCase(unittest.TestCase):
         tests the get_shorten_urls endpoint if it returns a list of all the
         shorten urls of a particular person
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
         self.create_shorten_urls()
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.get(
