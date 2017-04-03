@@ -49,7 +49,6 @@ def get_urls():
         [Utilities.to_json(url, ['id', 'url_name', 'date_added']) for url in url_list]
     )
 
-
 @api.route('/api/shorten-urls')
 @auth.login_required
 @permission
@@ -89,7 +88,6 @@ def get_short_urls_for_particular_user():
         ]
     )
 
-
 @api.route('/api/shorten-url/<int:id>/url')
 def get_long_url_with_shorten_url_id(id):
     """
@@ -103,7 +101,6 @@ def get_long_url_with_shorten_url_id(id):
                                                     'date_added']))
     except NotFound:
         return page_not_found("Requested resource was not found")
-
 
 @api.route('/api/shorten-url/<shorten_url_name>/url')
 def get_long_url_with_shorten__url_name(shorten_url_name):
@@ -119,7 +116,6 @@ def get_long_url_with_shorten__url_name(shorten_url_name):
                                                     'date_added']))
     except NotFound:
         return page_not_found("Requested resource was not found")
-
 
 @api.route('/api/shorten-urls/<int:id>/url/update', methods=['PUT'])
 @auth.login_required
