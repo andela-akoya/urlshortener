@@ -246,7 +246,7 @@ class UserModelTestCase(unittest.TestCase):
             User.check_email_uniqueness("koyexes@gmail.com")
             self.assertEqual("The username 'koyexes@gmail.com' already exist",
                              context.exception.message)
-            
+
 
 class UrlModelTestCase(unittest.TestCase):
     def setUp(self):
@@ -380,3 +380,64 @@ class UrlModelTestCase(unittest.TestCase):
         """
         output = Url.get_shorten_url(self.url, None, 10)
         self.assertEqual(len(output.name), 10)
+
+
+
+class ShortenUrlModelTestCase(unittest.TestCase):
+    def setUp(self):
+        self.user = User(username="koyexes",lastname="koya",
+                         firstname="gabriel",email="koyexes@gmail.com")
+        self.url = Url(url_name="http://www.google.com")
+        self.short_url = ShortenUrl(shorten_url_name="pswd45")
+        self.app = create_app('testing')
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+        g.current_user = self.user
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+    def test_short_url_name_property_getter(self):
+        """
+        tests the function if it returns the value of the
+        short_url_name property
+        """
+        self.assertTrue(self.short_url.name == "pswd45")
+
+    def test_url_name_property_setter(self):
+        """
+        tests the function if it properly sets the value of the
+        short_url_name property
+        """
+        self.assertTrue(self.short_url.name == "pswd45")
+        self.short_url.name = "anoda45"
+        self.assertNotEqual(self.short_url.name, "pswd45")
+        self.assertTrue(self.short_url.name == "anoda45")
+
+    def test_get_short_url_by_name(self):
+        """
+        tests the function if it returns the right short_url object from the
+        database based on the short_url name passed in as argument
+        """
+        db.session.add(self.short_url)
+        db.session.commit()
+        output = ShortenUrl.get_short_url_by_name("pswd45")
+        self.assertTrue(output == self.short_url)
+
+    def check_vanity_string_availability_for_anonymous_user(self):
+        """
+        tests the check_vanity_string_availability if it flags a
+        validation exception for anonymous user
+        """
+        g.current_user = AnonymousUser()
+        expected_output = "Only registeredusers are liable to use " \
+                          "vanity string"
+        with self.assertRaises(ValidationException) as context:
+            ShortenUrl.check_vanity_string_availability("pswd45")
+            self.assertEqual(expected_output, context.exception.message)
+
+
+
