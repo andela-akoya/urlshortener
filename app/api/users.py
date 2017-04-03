@@ -1,5 +1,6 @@
 # coding=utf-8
 from flask import jsonify, request, g
+from sqlalchemy import desc
 from validators import ValidationFailure
 from werkzeug.exceptions import NotFound
 
@@ -38,6 +39,16 @@ def generate_shorten_url():
         return e.broadcast()
     except UrlValidationException as e:
         return e.broadcast()
+
+
+@api.route('/api/urls')
+@auth.login_required
+def get_urls():
+    """ returns a list of all the long urls ordered by date of creation """
+    url_list = Url.query.order_by(desc(Url.date_added)).all()
+    return jsonify(
+        [Utilities.to_json(url, ['id', 'url_name', 'date_added']) for url in url_list]
+    )
 
 
 @api.route('/api/user/urls')
