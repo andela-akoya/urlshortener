@@ -52,6 +52,7 @@ class User(db.Model, UserMixin):
     firstname = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(30), unique=True, index=True, nullable=False)
     password_hash = db.Column(db.String(128))
+    date_added = db.Column(db.DateTime, default=datetime.utcnow())
     url = db.relationship("Url", secondary=user_url, backref='users',
                           lazy='dynamic')
     short_url = db.relationship("ShortenUrl",  backref='users',
@@ -137,6 +138,7 @@ class ShortenUrl(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shorten_url_name = db.Column(db.String(20), unique=True, index=True,
                                  nullable=False)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow())
     user = db.Column(db.Integer, db.ForeignKey('users.id'))
     long_url = db.Column(db.Integer, db.ForeignKey('url.id'))
     is_active = db.Column(db.Boolean, default=True)
@@ -235,6 +237,7 @@ class Url(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url_name = db.Column(db.String(20), unique=True, index=True,
                          nullable=False)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow())
     user = db.relationship("User", secondary=user_url, backref='urls',
                           lazy='dynamic')
     short_url = db.relationship("ShortenUrl", backref='urls',
