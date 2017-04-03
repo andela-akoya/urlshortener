@@ -210,7 +210,7 @@ class APITestCase(unittest.TestCase):
         self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response['message'] == "Passwords don't match")
 
-    def test_get_urls(self):
+    def test_get_urls_for_particular_user(self):
         """
         tests the get_urls endpoint if it returns a list of all the long urls
         have been shortened
@@ -221,7 +221,8 @@ class APITestCase(unittest.TestCase):
         g.current_user.url.append(self.url3)
         db.session.commit()
         headers = self.get_api_headers("koyexes", "password")
-        response = self.client.get(url_for('api.get_urls'), headers=headers)
+        response = self.client.get(url_for('api.get_urls_for_particular_user'),
+                                   headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertIsInstance(json_response, list)
         self.assertEqual(len(json_response), 3)
