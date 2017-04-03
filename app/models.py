@@ -123,3 +123,123 @@ class User(db.Model, UserMixin):
         if User.get_by_email(email):
             raise ValidationException("The email '{}' already exist"
                                       .format(email))
+
+
+class ShortenUrl(db.Model):
+    """
+        Defines the shorten_url table schema and also handling
+        shorten_url related functionalities.
+    """
+    __table_name__ = "shorten_urls"
+    id = db.Column(db.Integer, primary_key=True)
+    shorten_url_name = db.Column(db.String(20), unique=True, index=True,
+                                 nullable=False)
+    user = db.Column(db.Integer, db.ForeignKey('users.id'))
+    long_url = db.Column(db.Integer, db.ForeignKey('url.id'))
+
+    @property
+    def name(self):
+        return self.shorten_url_name
+
+    @name.setter
+    def name(self, new_name):
+        self.shorten_url_name = new_name
+
+    @staticmethod
+    def get_short_url_by_name(name):
+        return ShortenUrl.query.filter_by(shorten_url_name=name).first()
+
+    @staticmethod
+    def save(shorten_url_name, user, long_url):
+        shorten_url = ShortenUrl(shorten_url_name=shorten_url_name,
+                                 user=user.id, long_url=long_url.id)
+        db.session.add(shorten_url)
+        db.session.commit()
+
+    @staticmethod
+    def check_vanity_string_availability(vanity_string):
+        if g.current_user.is_anonymous and vanity_string:
+            raise ValidationException("Only registered users are liable "
+                                      "to use vanity string")
+        elif ShortenUrl.get_short_url_by_name(vanity_string):
+            raise ValidationException("{} is already in use."
+                                      " Please input another"
+                                      .format(vanity_string))
+
+
+class Url(db.Model):
+    """
+    Defines the url table schema and also handling url related
+    functionalities.
+    """
+    __table_name__ = "urls"
+    id = db.Column(db.Integer, primary_key=True)
+    url_name = db.Column(db.String(20), unique=True, index=True,
+                         nullable=False)
+    user = db.relationship("User", secondary=user_url, backref='urls',
+                          lazy='dynamic')
+    short_url = db.relationship("ShortenUrl", backref='urls',
+                                lazy='dynamic')
+
+    @property
+    def name(self):
+        return self.url_name
+
+    @name.setter
+    def name(self, new_url_name):
+        self.url_name = new_url_name
+
+    @property
+    def get_id(self):
+        return self.id
+
+    @staticmethod
+    def check_validity(new_url):
+        if not url(new_url):
+            raise UrlValidationException("Invalid url (Either url is empty"
+                                         " or invalid. (Url must includ"
+                                         "e either http:// or https://))")
+
+    @staticmethod
+    def get_from_json(json_data):
+        return [
+            Url(url_name=json_data['url']),
+            json_data["vanity_string"]
+            if "vanity_string" in json_data else None,
+            json_data["shorten_url_length"]
+            if "shorten_url_length"in json_data else None
+        ]
+
+    @staticmethod
+    def get_url_by_name(url_name):
+        return Url.query.filter_by(url_name=url_name).first()
+
+    @staticmethod
+    def get_shorten_url(new_url, vanity_string, short_url_length):
+        shorten_url_name = Shortener.generate_shorten_name(short_url_length) \
+            if not vanity_string else vanity_string
+        while ShortenUrl.get_short_url_by_name(shorten_url_name):
+            shorten_url_name = Shortener\
+                                .generate_shorten_name(short_url_length)
+        existing_long_url = Url.get_url_by_name(new_url.name)
+        if not existing_long_url:
+            Url.save(new_url, shorten_url_name)
+        elif not(existing_long_url in g.current_user.url):
+            Url.save(existing_long_url, shorten_url_name)
+        else:
+            return list(set(existing_long_url.short_url)
+                        .intersection(g.current_user.short_url))[0]
+        return ShortenUrl.get_short_url_by_name(shorten_url_name)
+
+    @staticmethod
+    def save(url, shorten_url_name):
+        g.current_user.url.append(url)
+        db.session.commit()
+        ShortenUrl.save(shorten_url_name=shorten_url_name,
+                        user=g.current_user, long_url=url)
+
+
+
+
+
+
