@@ -415,7 +415,6 @@ class UrlModelTestCase(unittest.TestCase):
         self.assertFalse(Url.get_url_by_name("http://www.google.com"))
 
 
-
 class ShortenUrlModelTestCase(unittest.TestCase):
     def setUp(self):
         self.user = User(username="koyexes",lastname="koya",
