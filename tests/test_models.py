@@ -382,7 +382,6 @@ class UrlModelTestCase(unittest.TestCase):
         self.assertEqual(len(output.name), 10)
 
 
-
 class ShortenUrlModelTestCase(unittest.TestCase):
     def setUp(self):
         self.user = User(username="koyexes",lastname="koya",
