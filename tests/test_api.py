@@ -268,7 +268,7 @@ class APITestCase(unittest.TestCase):
         self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response['message'] == "Passwords don't match")
 
-    def test_get_urls(self):
+    def test_get_urls_for_particular_user(self):
         """
         tests the get_urls endpoint if it returns a list of all the long urls
         have been shortened for a particular user

@@ -39,7 +39,7 @@ def generate_shorten_url():
         return e.broadcast()
 
 
-@api.route('/api/urls')
+@api.route('/api/user/urls')
 @auth.login_required
 @permission
 def get_urls():

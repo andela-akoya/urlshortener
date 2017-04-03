@@ -57,6 +57,9 @@ def validation_error(e):
     return process_request(400, context)
 
 
-
-
+@api.app_errorhandler(405)
+def method_not_allowed(e):
+    # returns a 405 status code for wrong method
+    context = {'error': str(e).split(":")[0], 'message': str(e).split(":")[1]}
+    return process_request(405, context)
 
