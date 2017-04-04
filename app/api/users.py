@@ -51,6 +51,17 @@ def get_urls():
     )
 
 
+@api.route('/api/shorten-urls')
+@auth.login_required
+def get_shorten_urls():
+    """ returns a list of all the shorten urls ordered by date of creation """
+    shorten_url_list = ShortenUrl.query.order_by(desc(ShortenUrl.date_added)).all()
+    return jsonify([Utilities.to_json(
+        shorten_url, ['id', 'url_name', 'date_added'])
+                    for shorten_url in shorten_url_list]
+    )
+
+
 @api.route('/api/user/urls')
 @auth.login_required
 @permission
