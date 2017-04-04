@@ -6,6 +6,7 @@ from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           BadSignature, SignatureExpired)
 from validators import url, ValidationFailure
+from werkzeug.exceptions import NotFound
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db
@@ -133,6 +134,9 @@ class User(db.Model, UserMixin):
             raise ValidationException("The email '{}' already exist"
                                       .format(email))
 
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
 class ShortenUrl(db.Model):
     """
