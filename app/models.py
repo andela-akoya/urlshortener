@@ -133,6 +133,10 @@ class User(db.Model, UserMixin):
             raise ValidationException("The email '{}' already exist"
                                       .format(email))
 
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
 
 class ShortenUrl(db.Model):
     """
@@ -179,6 +183,31 @@ class ShortenUrl(db.Model):
     def confirm_user(self):
         if self.user != g.current_user.id:
             raise NotFound
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @staticmethod
+    def update_target_url(shorten_url, shorten_url_target, new_long_url):
+        if Url.get_url_by_name(new_long_url):
+            long_url = Url.get_url_by_name(new_long_url)
+            if g.current_user in long_url.user:
+                raise ValidationException("You already have a shorten url"
+                                          " for the proposed long url."
+                                          " Therefore the update failed")
+            g.current_user.url.remove(shorten_url_target)
+            if not shorten_url_target.user.count():
+                shorten_url_target.delete()
+            g.current_user.url.append(long_url)
+            shorten_url.long_url = long_url.id
+        elif shorten_url_target.user.count() == 1:
+            shorten_url_target.name = new_long_url
+        else:
+            g.current_user.url.append(Url(url_name=new_long_url))
+            db.session.commit()
+            shorten_url.long_url = Url.get_url_by_name(new_long_url).id
+        db.session.commit()
 
 
 class Url(db.Model):
@@ -252,6 +281,10 @@ class Url(db.Model):
         db.session.commit()
         ShortenUrl.save(shorten_url_name=shorten_url_name,
                         user=g.current_user, long_url=url)
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
 
 
