@@ -64,7 +64,6 @@ def get_shorten_urls():
 
 @api.route('/api/user/urls')
 @auth.login_required
-@permission
 def get_urls_for_particular_user():
     """ returns a list of all the long urls pertaining to a particular user"""
     url_list = g.current_user.url_list
@@ -75,7 +74,6 @@ def get_urls_for_particular_user():
 
 @api.route('/api/user/shorten-urls')
 @auth.login_required
-@permission
 def get_short_urls_for_particular_user():
     """
     returns a list of all the shorten urls pertaining to a
