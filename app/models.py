@@ -6,6 +6,7 @@ from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           BadSignature, SignatureExpired)
 from validators import url, ValidationFailure
+from werkzeug.exceptions import NotFound
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db
@@ -174,6 +175,10 @@ class ShortenUrl(db.Model):
             raise ValidationException("{} is already in use."
                                       " Please input another"
                                       .format(vanity_string))
+
+    def confirm_user(self):
+        if self.user != g.current_user.id:
+            raise NotFound
 
 
 class Url(db.Model):
