@@ -41,6 +41,7 @@ def generate_shorten_url():
 
 @api.route('/api/urls')
 @auth.login_required
+@permission
 def get_urls():
     """ returns a list of all the long urls ordered by date of creation """
     url_list = Url.query.order_by(desc(Url.date_added)).all()
@@ -51,6 +52,7 @@ def get_urls():
 
 @api.route('/api/shorten-urls')
 @auth.login_required
+@permission
 def get_shorten_urls():
     """ returns a list of all the shorten urls ordered by date of creation """
     shorten_url_list = ShortenUrl.query.order_by(desc(ShortenUrl.date_added)).all()
@@ -117,6 +119,41 @@ def get_long_url_with_shorten__url_name(shorten_url_name):
                                                     'date_added']))
     except NotFound:
         return page_not_found("Requested resource was not found")
+
+
+@api.route('/api/shorten-urls/<int:id>/url/update', methods=['PUT'])
+@auth.login_required
+@permission
+def update_shorten_url_target(id):
+    """
+    updates a particular long url attached to a shorten url whose primary key
+    is passed as argument
+    """
+    try:
+        Utilities.is_json(request)
+        data = Utilities.get_json(request)
+        Utilities.check_data_validity(data, ["url"])
+        Url.check_validity(data["url"])
+        new_long_url = data["url"]
+        shorten_url = ShortenUrl.query.get_or_404(id)
+        shorten_url.confirm_user()
+        shorten_url_target = Url.query.get_or_404(shorten_url.long_url)
+        ShortenUrl.update_target_url(shorten_url, shorten_url_target,
+                                     new_long_url)
+        shorten_url = ShortenUrl.query.get_or_404(id)
+        return jsonify({
+            "id": shorten_url.id,
+            "shorten_url_name": shorten_url.shorten_url_name,
+            "date_added": shorten_url.date_added,
+            "long_url": Url.query.get(shorten_url.long_url).url_name
+        })
+    except NotFound:
+        return page_not_found("Requested resource was not found")
+    except ValidationException as e:
+        return e.broadcast()
+    except UrlValidationException as e:
+        return e.broadcast()
+
 
 
 
