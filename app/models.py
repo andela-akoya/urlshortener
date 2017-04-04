@@ -30,6 +30,11 @@ class AnonymousUser(AnonymousUserMixin):
         db.session.commit()
         return anonymous_user
 
+    @staticmethod
+    def set_anonymous():
+        if g.current_user.is_anonymous:
+            g.current_user = AnonymousUser.get_anonymous_user()
+
 
 user_url = db.Table('user_url',
                     db.Column('user_id', db.Integer,
