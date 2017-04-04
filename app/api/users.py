@@ -88,7 +88,7 @@ def get_short_urls_for_particular_user():
     )
 
 
-@api.route('/api/shorten-urls/<int:id>/url')
+@api.route('/api/shorten-url/<int:id>')
 def get_long_url_with_shorten_url_id(id):
     """
     returns a particular long url attached to a shorten url whose primary key
@@ -102,7 +102,7 @@ def get_long_url_with_shorten_url_id(id):
         return page_not_found("Requested resource was not found")
 
 
-@api.route('/api/<shorten_url_name>')
+@api.route('/api/shorten-url/<shorten_url_name>')
 def get_long_url_with_shorten__url_name(shorten_url_name):
     """
     returns a particular long url attached to a shorten url whose name
