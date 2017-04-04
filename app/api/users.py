@@ -28,9 +28,7 @@ def generate_shorten_url():
         Url.check_validity(data["url"])
         new_url, vanity_string, shorten_url_length = Url.get_from_json(data)
         ShortenUrl.check_vanity_string_availability(vanity_string)
-        if g.current_user.is_anonymous:
-            g.current_user = AnonymousUser.get_anonymous_user()
-
+        AnonymousUser.set_anonymous()
         shorten_url = Url.get_shorten_url(new_url, vanity_string,
                                           shorten_url_length)
         return jsonify(Utilities.to_json(shorten_url,
@@ -66,6 +64,7 @@ def get_shorten_urls():
 @auth.login_required
 def get_urls_for_particular_user():
     """ returns a list of all the long urls pertaining to a particular user"""
+    AnonymousUser.set_anonymous()
     url_list = g.current_user.url_list
     return jsonify(
         [Utilities.to_json(url, ['id', 'url_name']) for url in url_list]
@@ -79,6 +78,7 @@ def get_short_urls_for_particular_user():
     returns a list of all the shorten urls pertaining to a
     particular user
     """
+    AnonymousUser.set_anonymous()
     short_url_list = g.current_user.short_url_list
     return jsonify(
         [
