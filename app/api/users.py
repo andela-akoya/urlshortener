@@ -97,7 +97,8 @@ def get_long_url_with_shorten_url_id(id):
     try:
         long_url = Url.query.get_or_404(
             ShortenUrl.query.get_or_404(id).long_url)
-        return jsonify(Utilities.to_json(long_url, ['id', 'url_name']))
+        return jsonify(Utilities.to_json(long_url, ['id', 'url_name',
+                                                    'date_added']))
     except NotFound:
         return page_not_found("Requested resource was not found")
 
@@ -112,7 +113,8 @@ def get_long_url_with_shorten__url_name(shorten_url_name):
         shorten_url_object= ShortenUrl.query.filter_by(
             shorten_url_name=shorten_url_name).first_or_404()
         long_url = Url.query.get_or_404(shorten_url_object.long_url)
-        return jsonify(Utilities.to_json(long_url, ['id', 'url_name']))
+        return jsonify(Utilities.to_json(long_url, ['id', 'url_name',
+                                                    'date_added']))
     except NotFound:
         return page_not_found("Requested resource was not found")
 
