@@ -155,9 +155,21 @@ def update_shorten_url_target(id):
         return e.broadcast()
 
 
-
-
-
+@api.route('/api/shorten-urls/<int:id>/activate', methods=['PUT'])
+@api.route('/api/shorten-urls/<int:id>/deactivate', methods=['PUT'])
+@auth.login_required
+@permission
+def activate_shorten_url(id):
+    """this function activates or deactivates a shorten_url"""
+    try:
+        action_to_perform = request.path.split("/")[4]
+        shorten_url = ShortenUrl.query.get_or_404(id)
+        shorten_url.confirm_user()
+        if action_to_perform == "activate":
+            return shorten_url.activate()
+        return shorten_url.deactivate()
+    except NotFound:
+        return page_not_found("The resource you seek to update doesn't exist")
 
 
 
