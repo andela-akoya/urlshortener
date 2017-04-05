@@ -52,7 +52,7 @@ def unauthorized(e="Invalid Credentials"):
 
 @api.errorhandler(400)
 def validation_error(e):
-    # returns a 401 status code for unauthorized access
+    # returns a 400 status code for data validation failure
     context = {'error': 'validation error', 'message': str(e)}
     return process_request(400, context)
 
