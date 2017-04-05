@@ -150,6 +150,7 @@ class ShortenUrl(db.Model):
     date_added = db.Column(db.DateTime, default=datetime.utcnow())
     user = db.Column(db.Integer, db.ForeignKey('users.id'))
     long_url = db.Column(db.Integer, db.ForeignKey('url.id'))
+    is_active = db.Column(db.Boolean, default=True)
 
     @property
     def name(self):
