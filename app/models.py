@@ -1,7 +1,7 @@
 # coding=utf-8
 from datetime import datetime
 
-from flask import current_app, g
+from flask import current_app, g, jsonify
 from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           BadSignature, SignatureExpired)
@@ -12,6 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.api.custom_exceptions import (ValidationException,
                                        UrlValidationException)
+from app.api.errors import bad_request
 from app.api.shortener import Shortener
 
 
@@ -188,6 +189,20 @@ class ShortenUrl(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+    def activate(self):
+        if self.is_active:
+            return bad_request("The shorten url is currently active")
+        self.is_active = True
+        db.session.commit()
+        return jsonify({"message": "Successfully activated"})
+
+    def deactivate(self):
+        if not self.is_active:
+            return bad_request("The shorten url is currently not active")
+        self.is_active = False
+        db.session.commit()
+        return jsonify({"message": "Successfully deactivated"})
 
     @staticmethod
     def update_target_url(shorten_url, shorten_url_target, new_long_url):
