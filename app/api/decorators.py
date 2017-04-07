@@ -11,3 +11,12 @@ def permission(f):
             return forbidden("You are not authorized to use this service")
         return f(*args, **kwargs)
     return decorated_function
+
+
+def admin_permission(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not g.current_user.is_admin:
+            return forbidden("You are not authorized to use this service")
+        return f(*args, **kwargs)
+    return decorated_function
