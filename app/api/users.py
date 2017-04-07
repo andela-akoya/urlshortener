@@ -7,7 +7,7 @@ from werkzeug.exceptions import NotFound
 from . import api
 from .authentication import auth
 from .custom_exceptions import ValidationException, UrlValidationException
-from .decorators import permission
+from .decorators import permission, admin_permission
 from .errors import validation_error, page_not_found
 from .utilities import Utilities
 from app.models import Url, ShortenUrl, AnonymousUser
@@ -41,7 +41,7 @@ def generate_shorten_url():
 
 @api.route('/api/urls')
 @auth.login_required
-@permission
+@admin_permission
 def get_urls():
     """ returns a list of all the long urls ordered by date of creation """
     url_list = Url.query.order_by(desc(Url.date_added)).all()
@@ -52,7 +52,7 @@ def get_urls():
 
 @api.route('/api/shorten-urls')
 @auth.login_required
-@permission
+@admin_permission
 def get_shorten_urls():
     """ returns a list of all the shorten urls ordered by date of creation """
     shorten_url_list = ShortenUrl.query.order_by(desc(ShortenUrl.date_added)).all()

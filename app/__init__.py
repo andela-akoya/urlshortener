@@ -28,13 +28,6 @@ def create_app(config_name):
     mail.init_app(app)  # initializes for mailing functionaries.
     login_manager.init_app(app)  # initializes for login management
 
-    if not app.debug and not app.testing and not app.config['SSL_DISABLE']:
-        # redirects to secure protocol (HTTPS)
-        from flask_sslify import SSLify
-        sslify = SSLify(app)
-
     from .api import api as api_blueprint
-    from .main import main as main_blueprint
-    app.register_blueprint(main_blueprint)  # registers main blueprint to app
     app.register_blueprint(api_blueprint)  # registers api blueprint to app
     return app
