@@ -20,7 +20,7 @@ migrate = Migrate(app, db)  # initializes migration and registers the app
 
 def make_shell_context():
     # creates a dictionary of all the objects that can be accessed in shell
-    return dict(app=app, db=db)
+    return dict(app=app)
 
 manager.add_command('shell',
                     Shell(banner="Welcome to Url-Shortener Python shell"),
@@ -48,7 +48,7 @@ def test():
         COV.stop()
         COV.save()
         print('Coverage Summary:')
-        COV.report()
+        COV.report(show_missing=True)
         basedir = os.path.abspath(os.path.dirname(__file__))
         covdir = os.path.join(basedir, 'tmp/coverage')
         COV.html_report(directory=covdir)
