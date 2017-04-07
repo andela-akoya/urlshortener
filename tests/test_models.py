@@ -247,6 +247,18 @@ class UserModelTestCase(unittest.TestCase):
             self.assertEqual("The username 'koyexes@gmail.com' already exist",
                              context.exception.message)
 
+    def test_delete_user(self):
+        """
+        tests the function if it removes the user record from
+        the database
+        """
+        self.user.password = "password"
+        db.session.add(self.user)
+        db.session.commit()
+        self.assertTrue(User.get_by_username("koyexes"))
+        self.user.delete()
+        self.assertFalse(User.get_by_username("koyexes"))
+
 
 class UrlModelTestCase(unittest.TestCase):
     def setUp(self):
@@ -280,6 +292,16 @@ class UrlModelTestCase(unittest.TestCase):
         self.url.name = "http://www.facebook.com"
         self.assertNotEqual(self.url.name, "http://www.google.com")
         self.assertTrue(self.url.name == "http://www.facebook.com")
+
+    def test_url_id_property_getter(self):
+        """
+        tests the function if it returns the value of the
+        url_id property
+        """
+        self.assertFalse(self.url.get_id)
+        db.session.add(self.url)
+        db.session.commit()
+        self.assertTrue(Url.get_url_by_name(self.url.name).get_id == 1)
 
     def test_check_url_validity_with_valid_url(self):
         """
@@ -381,6 +403,17 @@ class UrlModelTestCase(unittest.TestCase):
         output = Url.get_shorten_url(self.url, None, 10)
         self.assertEqual(len(output.name), 10)
 
+    def test_delete_long_url(self):
+        """
+        tests the function if it removes the url record from
+        the database
+        """
+        db.session.add(self.url)
+        db.session.commit()
+        self.assertTrue(Url.get_url_by_name("http://www.google.com"))
+        self.url.delete()
+        self.assertFalse(Url.get_url_by_name("http://www.google.com"))
+
 
 class ShortenUrlModelTestCase(unittest.TestCase):
     def setUp(self):
@@ -437,6 +470,18 @@ class ShortenUrlModelTestCase(unittest.TestCase):
         with self.assertRaises(ValidationException) as context:
             ShortenUrl.check_vanity_string_availability("pswd45")
             self.assertEqual(expected_output, context.exception.message)
+
+    def test_delete_short_url(self):
+        """
+        tests the function if it removes the a shorten_url record from
+        the database
+        """
+        db.session.add(self.short_url)
+        db.session.commit()
+        self.assertTrue(ShortenUrl.get_short_url_by_name("pswd45"))
+        self.short_url.delete()
+        self.assertFalse(Url.get_url_by_name("pswd45"))
+
 
 
 
