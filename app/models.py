@@ -58,14 +58,12 @@ class User(db.Model, UserMixin):
     firstname = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(30), unique=True, index=True, nullable=False)
     password_hash = db.Column(db.String(128))
+    is_admin = db.Column(db.Boolean, default=False)
     date_added = db.Column(db.DateTime, default=datetime.utcnow())
     url = db.relationship("Url", secondary=user_url, backref='users',
                           lazy='dynamic')
     short_url = db.relationship("ShortenUrl",  backref='users',
                                 lazy='dynamic')
-
-    def __repr__(self):
-        return '<User %r>' % self.username
 
     @property
     def password(self):
@@ -268,8 +266,8 @@ class Url(db.Model):
     def check_validity(new_url):
         if not url(new_url):
             raise UrlValidationException("Invalid url (Either url is empty"
-                                         " or invalid. (Url must includ"
-                                         "e either http:// or https://))")
+                                         " or invalid. (Url must include"
+                                         " either http:// or https://))")
 
     @staticmethod
     def get_from_json(json_data):
