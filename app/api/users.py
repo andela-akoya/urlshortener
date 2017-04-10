@@ -11,7 +11,7 @@ from .utilities import Utilities
 from app.models import Url, ShortenUrl, AnonymousUser
 
 
-@api.route('/api/url/shorten/', methods=['POST'], strict_slashes=False)
+@api.route('/url/shorten/', methods=['POST'], strict_slashes=False)
 @auth.login_required
 def generate_shorten_url():
     """
@@ -38,8 +38,8 @@ def generate_shorten_url():
         return e.broadcast()
 
 
-@api.route('/api/urls/', strict_slashes=False)
-@api.route('/api/urls/popularity/', strict_slashes=False)
+@api.route('/urls/', strict_slashes=False)
+@api.route('/urls/popularity/', strict_slashes=False)
 @auth.login_required
 def get_urls():
     """ returns a list of all the long urls ordered by date of creation """
@@ -55,8 +55,8 @@ def get_urls():
     )
 
 
-@api.route('/api/shorten-urls/', strict_slashes=False)
-@api.route('/api/shorten-urls/popularity/', strict_slashes=False)
+@api.route('/shorten-urls/', strict_slashes=False)
+@api.route('/shorten-urls/popularity/', strict_slashes=False)
 @auth.login_required
 def get_shorten_urls():
     """ returns a list of all the shorten urls ordered by date of creation """
@@ -72,7 +72,7 @@ def get_shorten_urls():
     )
 
 
-@api.route('/api/user/urls/', strict_slashes=False)
+@api.route('/user/urls/', strict_slashes=False)
 @auth.login_required
 @permission
 def get_urls():
@@ -110,7 +110,7 @@ def get_urls_for_particular_user():
     )
 
 
-@api.route('/api/user/shorten-urls/', strict_slashes=False)
+@api.route('/user/shorten-urls/', strict_slashes=False)
 @auth.login_required
 def get_short_urls_for_particular_user():
     """
@@ -131,7 +131,7 @@ def get_short_urls_for_particular_user():
     )
 
 
-@api.route('/api/shorten-url/<int:id>/url/', strict_slashes=False)
+@api.route('/shorten-url/<int:id>/url/', strict_slashes=False)
 def get_long_url_with_shorten_url_id(id):
     """
     returns a particular long url attached to a shorten url whose primary key
@@ -150,8 +150,7 @@ def get_long_url_with_shorten_url_id(id):
     except NotFound:
         return page_not_found("Requested resource was not found")
 
-
-@api.route('/api/shorten-url/<shorten_url_name>/url')
+@api.route('/shorten-url/<shorten_url_name>/url/', strict_slashes=False)
 def get_long_url_with_shorten__url_name(shorten_url_name):
     """
     returns a particular long url attached to a shorten url whose name
@@ -171,7 +170,7 @@ def get_long_url_with_shorten__url_name(shorten_url_name):
     except NotFound:
         return page_not_found("Requested resource was not found")
 
-@api.route('/api/shorten-urls/<int:id>/url/update', methods=['PUT'])
+@api.route('/shorten-urls/<int:id>/url/update/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
 @permission
 def update_shorten_url_target(id):
@@ -204,14 +203,14 @@ def update_shorten_url_target(id):
     except UrlValidationException as e:
         return e.broadcast()
 
-@api.route('/api/shorten-urls/<int:id>/activate', methods=['PUT'])
-@api.route('/api/shorten-urls/<int:id>/deactivate', methods=['PUT'])
+@api.route('/shorten-urls/<int:id>/activate/', methods=['PUT'], strict_slashes=False)
+@api.route('/shorten-urls/<int:id>/deactivate/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
 @permission
 def activate_shorten_url(id):
     """this function activates or deactivates a shorten_url"""
     try:
-        action_to_perform = request.path.split("/")[4]
+        action_to_perform = request.path.split("/")[5]
         shorten_url = ShortenUrl.query.get_or_404(id)
         shorten_url.confirm_user()
         if action_to_perform == "activate":
@@ -220,9 +219,8 @@ def activate_shorten_url(id):
     except NotFound:
         return page_not_found("The resource you seek to update doesn't exist")
 
-
-@api.route('/api/shorten-urls/<shorten_url_name>/activate', methods=['PUT'])
-@api.route('/api/shorten-urls/<shorten_url_name>/deactivate', methods=['PUT'])
+@api.route('/shorten-urls/<shorten_url_name>/activate/', methods=['PUT'], strict_slashes=False)
+@api.route('/shorten-urls/<shorten_url_name>/deactivate/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
 @permission
 def activate_shorten_url_with_name(shorten_url_name):
@@ -231,7 +229,7 @@ def activate_shorten_url_with_name(shorten_url_name):
     shorten_url name
     """
     try:
-        action_to_perform = request.path.split("/")[4]
+        action_to_perform = request.path.split("/")[5]
         shorten_url = ShortenUrl.query.filter_by(
             shorten_url_name=shorten_url_name).first_or_404()
         shorten_url.confirm_user()

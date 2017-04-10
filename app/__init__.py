@@ -29,5 +29,5 @@ def create_app(config_name):
     login_manager.init_app(app)  # initializes for login management
 
     from .api import api as api_blueprint
-    app.register_blueprint(api_blueprint)  # registers api blueprint to app
+    app.register_blueprint(api_blueprint, url_prefix='/api/v1.0')  
     return app
