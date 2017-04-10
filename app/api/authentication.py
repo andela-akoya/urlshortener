@@ -73,7 +73,3 @@ def get_token():
 @auth.error_handler
 def auth_error():
     return errors.unauthorized("invalid credentials")
-
-
-
-
