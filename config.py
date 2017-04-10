@@ -9,7 +9,7 @@ class Config:
     This class is the base class for the different types of
     environment configuration
     """
-    # gets the environment variable secret key or gives it a default value
+    # gets the environment variable secret key or gives it a random value
     SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(24)
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = True
@@ -29,7 +29,6 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')
-
 
 
 class TestingConfig(Config):
