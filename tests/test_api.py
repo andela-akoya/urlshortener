@@ -278,8 +278,8 @@ class APITestCase(unittest.TestCase):
         response = self.client.get(url_for('api.get_urls_for_particular_user'),
                                    headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertIsInstance(json_response, list)
-        self.assertEqual(len(json_response), 3)
+        self.assertIsInstance(json_response["url_list"], list)
+        self.assertEqual(len(json_response["url_list"]), 3)
 
     def test_get_shorten_urls_for_particular_user(self):
         """
@@ -294,8 +294,8 @@ class APITestCase(unittest.TestCase):
         response = self.client.get(
             url_for('api.get_short_urls_for_particular_user'),headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertIsInstance(json_response, list)
-        self.assertEqual(len(json_response), 3)
+        self.assertIsInstance(json_response["shorten_url_list"], list)
+        self.assertEqual(len(json_response["shorten_url_list"]), 3)
 
     def test_shorten_long_url(self):
         """
@@ -398,8 +398,8 @@ class APITestCase(unittest.TestCase):
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.get(url_for('api.get_urls'), headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertIsInstance(json_response, list)
-        self.assertEqual(len(json_response), 3)
+        self.assertIsInstance(json_response["url_list"], list)
+        self.assertEqual(len(json_response["url_list"]), 3)
 
     def test_get_shorten_urls(self):
         """
@@ -411,8 +411,8 @@ class APITestCase(unittest.TestCase):
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.get("/api/v1.0/shorten-urls/", headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertIsInstance(json_response, list)
-        self.assertEqual(len(json_response), 3)
+        self.assertIsInstance(json_response["shorten_url_list"], list)
+        self.assertEqual(len(json_response["shorten_url_list"]), 3)
 
     def test_get_shorten_urls_by_popularity(self):
         """
