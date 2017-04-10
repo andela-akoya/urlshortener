@@ -11,6 +11,8 @@ def process_request(status_code, data):
     """
     response = jsonify(data)
     response.status_code = status_code
+    if status_code == 401:
+        response.headers['WWW-Authenticate'] = "Unauthorized"
     return response
 
 
