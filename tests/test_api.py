@@ -241,8 +241,8 @@ class APITestCase(unittest.TestCase):
         response = self.client.get(url_for('api.get_urls_for_particular_user'),
                                    headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertIsInstance(json_response, list)
-        self.assertEqual(len(json_response), 3)
+        self.assertIsInstance(json_response["url_list"], list)
+        self.assertEqual(len(json_response["url_list"]), 3)
 
     def test_get_shorten_urls_for_particular_user(self):
         """
@@ -262,8 +262,8 @@ class APITestCase(unittest.TestCase):
         response = self.client.get(
             url_for('api.get_short_urls_for_particular_user'),headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertIsInstance(json_response, list)
-        self.assertEqual(len(json_response), 3)
+        self.assertIsInstance(json_response["shorten_url_list"], list)
+        self.assertEqual(len(json_response["shorten_url_list"]), 3)
 
     def test_shorten_long_url(self):
         """
@@ -370,8 +370,8 @@ class APITestCase(unittest.TestCase):
         headers = self.get_api_headers("koyexes", "password")
         response = self.client.get(url_for('api.get_urls'), headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertIsInstance(json_response, list)
-        self.assertEqual(len(json_response), 3)
+        self.assertIsInstance(json_response["url_list"], list)
+        self.assertEqual(len(json_response["url_list"]), 3)
 
     def test_get_shorten_urls(self):
         """
@@ -391,8 +391,8 @@ class APITestCase(unittest.TestCase):
         response = self.client.get(
             url_for('api.get_shorten_urls'), headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertIsInstance(json_response, list)
-        self.assertEqual(len(json_response), 3)
+        self.assertIsInstance(json_response["shorten_url_list"], list)
+        self.assertEqual(len(json_response["shorten_url_list"]), 3)
 
     def test_get_long_url_with_shorten_url_id(self):
         """
@@ -435,6 +435,7 @@ class APITestCase(unittest.TestCase):
         tests if the appropriately mapped long url is returned based on the
         shorten url's name passed in as argument
         """
+
         g.current_user = User.get_by_username("koyexes")
         g.current_user.url.append(self.url1)
         db.session.commit()
