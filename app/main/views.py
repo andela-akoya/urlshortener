@@ -29,9 +29,9 @@ def dashboard():
     # logout_user()
     return render_template('homepage.html')
 
-@main.route('/dashboard/', methods=["GET", "POST"])
+@main.route('/dashboard/', methods=["GET", "POST"], strict_slashes=False)
 @login_required
 def dashboard():
-    logout_user()
+    # logout_user()
     return render_template('homepage.html')
 
