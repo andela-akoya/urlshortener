@@ -32,13 +32,14 @@ class Utilities:
         return data
 
     @staticmethod
-    def check_data_validity(data, keys=[], exempt=False):
+    def check_data_validity(data, keys=None):
         """
         this function checks the data argument (dictionary) if it doesn't
         contain invalid keys and also if the valid keys have values.
         """
+        keys = keys if keys else []
         invalid_keys = set(data.keys()).difference(keys)
-        if invalid_keys and not exempt:
+        if invalid_keys:
             raise ValidationException("The following {} are not valid keys"
                                       .format(invalid_keys))
         for key, values in data.items():
