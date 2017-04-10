@@ -29,5 +29,7 @@ def create_app(config_name):
     login_manager.init_app(app)  # initializes for login management
 
     from .api import api as api_blueprint
+    from .main import main as main_blueprint
+    app.register_blueprint(main_blueprint)  # registers blueprint to app
     app.register_blueprint(api_blueprint)  # registers api blueprint to app
     return app
