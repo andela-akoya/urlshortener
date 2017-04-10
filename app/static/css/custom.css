@@ -1,0 +1,8 @@
+/* index page styling */
+#signupModal, #loginModal {
+    overflow: hidden;
+    max-height: 88%;
+}
+#toast-container {
+    right:40%;
+}

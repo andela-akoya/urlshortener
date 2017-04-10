@@ -6,10 +6,10 @@ from . import main
 from .forms import RegistrationForm, LoginForm
 
 
-@main.route('/')
-@main.route('/index/')
-@main.route('/register/')
-@main.route('/login/')
+@main.route('/', strict_slashes=False)
+@main.route('/index/', strict_slashes=False)
+@main.route('/register/', strict_slashes=False)
+@main.route('/login/', strict_slashes=False)
 def index():
     register_form = RegistrationForm()
     login_form = LoginForm()
@@ -18,8 +18,8 @@ def index():
     return render_template("index.html", context=context)
 
 
-@main.route('/dashboard/', methods=["GET", "POST"])
+@main.route('/dashboard/', methods=["GET", "POST"], strict_slashes=False)
 @login_required
 def dashboard():
-    logout_user()
+    # logout_user()
     return render_template('homepage.html')
