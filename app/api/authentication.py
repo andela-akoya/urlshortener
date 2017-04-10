@@ -32,7 +32,7 @@ def verify_password(username_or_token, password):
     return user.verify_password(password)
 
 
-@api.route('/api/register', methods=['POST'])
+@api.route('/api/register/', methods=['POST'])
 def register():
     """this function registers a new user"""
     try:
@@ -59,7 +59,7 @@ def register():
     return jsonify({"message": "Successfully Registered"}), 201
 
 
-@api.route('/api/token')
+@api.route('/api/token/')
 @auth.login_required
 def get_token():
     """authenticates a user and returns a token"""
