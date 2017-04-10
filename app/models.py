@@ -150,6 +150,9 @@ class ShortenUrl(db.Model):
     user = db.Column(db.Integer, db.ForeignKey('users.id'))
     long_url = db.Column(db.Integer, db.ForeignKey('url.id'))
     is_active = db.Column(db.Boolean, default=True)
+    deleted = db.Column(db.Boolean, default=False)
+    visits = db.relationship("ShortenUrlVisitLogs", backref='shorten_urls',
+                             lazy='dynamic')
 
     @property
     def name(self):
@@ -222,6 +225,16 @@ class ShortenUrl(db.Model):
             db.session.commit()
             shorten_url.long_url = Url.get_url_by_name(new_long_url).id
         db.session.commit()
+
+    @staticmethod
+    def get_all_shorten_urls_by_dated_added():
+        return ShortenUrl.query.order_by(db.desc(ShortenUrl.date_added))\
+            .filter_by(is_active=True, deleted=False).all()
+
+    @staticmethod
+    def get_all_shorten_urls_by_popularity():
+        return ShortenUrl.query.order_by(db.desc(ShortenUrl.number_of_visit))\
+            .filter_by(is_active=True, deleted=False).all()
 
 
 class Url(db.Model):
@@ -300,8 +313,19 @@ class Url(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    @staticmethod
+    def get_all_urls_by_dated_added():
+        return Url.query.order_by(db.desc(Url.date_added)).all()
 
 
+class ShortenUrlVisitLogs(db.Model):
+    __tablename__ = 'shorten_url_visit_log'
+    id = db.Column(db.Integer, primary_key=True)
+    shorten_url = db.Column(db.Integer, db.ForeignKey('shorten_url.id'))
+    date = db.Column(db.DateTime, default=datetime.utcnow())
 
-
-
+    @staticmethod
+    def create_visit_log_instance(shorten_url):
+        return ShortenUrlVisitLogs(
+            shorten_url=shorten_url
+        )
