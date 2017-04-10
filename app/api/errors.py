@@ -63,3 +63,9 @@ def method_not_allowed(e):
     context = {'error': str(e).split(":")[0], 'message': str(e).split(":")[1]}
     return process_request(405, context)
 
+
+@api.errorhandler(400)
+def custom_error(message, status):
+    # returns a custom defined error for a deleted and inactive shorten urls
+    context = {"error": "bad request", "message": message, "status": status}
+    return process_request(400, context)
