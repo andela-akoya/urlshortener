@@ -32,7 +32,7 @@ def verify_password(username_or_token, password):
     return user.verify_password(password)
 
 
-@api.route('/api/register/', methods=['POST'])
+@api.route('/api/register', methods=['POST'], strict_slashes=False)
 def register():
     """this function registers a new user"""
     try:
@@ -41,7 +41,8 @@ def register():
         Utilities.check_data_validity(data,
                                       keys=["username", "password",
                                             "firstname", "lastname",
-                                            "email", "confirm_password"])
+                                            "email", "confirm_password",
+                                            "csrf_token", "submit"])
         User.check_username_uniqueness(data["username"])
         User.check_email_uniqueness(data["email"])
         Utilities.check_password_equality(data["password"],
@@ -59,7 +60,7 @@ def register():
     return jsonify({"message": "Successfully Registered"}), 201
 
 
-@api.route('/api/token/')
+@api.route('/api/token/', strict_slashes=False)
 @auth.login_required
 def get_token():
     """authenticates a user and returns a token"""
