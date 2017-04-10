@@ -4,8 +4,6 @@ from flask_login import login_required, logout_user
 
 from . import main
 from .forms import RegistrationForm, LoginForm
-
-
 @main.route('/', strict_slashes=False)
 @main.route('/index/', strict_slashes=False)
 @main.route('/register/', strict_slashes=False)
