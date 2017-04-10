@@ -11,7 +11,7 @@ from .utilities import Utilities
 from app.models import Url, ShortenUrl, AnonymousUser
 
 
-@api.route('/api/url/shorten', methods=['POST'])
+@api.route('/api/url/shorten/', methods=['POST'])
 @auth.login_required
 def generate_shorten_url():
     """
@@ -37,8 +37,8 @@ def generate_shorten_url():
         return e.broadcast()
 
 
-@api.route('/api/urls')
-@api.route('/api/urls/popularity')
+@api.route('/api/urls/')
+@api.route('/api/urls/popularity/')
 @auth.login_required
 def get_urls():
     """ returns a list of all the long urls ordered by date of creation """
@@ -54,8 +54,8 @@ def get_urls():
     )
 
 
-@api.route('/api/shorten-urls')
-@api.route('/api/shorten-urls/popularity')
+@api.route('/api/shorten-urls/')
+@api.route('/api/shorten-urls/popularity/')
 @auth.login_required
 def get_shorten_urls():
     """ returns a list of all the shorten urls ordered by date of creation """
@@ -71,7 +71,7 @@ def get_shorten_urls():
     )
 
 
-@api.route('/api/user/urls')
+@api.route('/api/user/urls/')
 @auth.login_required
 @permission
 def get_urls():
@@ -109,7 +109,7 @@ def get_urls_for_particular_user():
     )
 
 
-@api.route('/api/user/shorten-urls')
+@api.route('/api/user/shorten-urls/')
 @auth.login_required
 def get_short_urls_for_particular_user():
     """
@@ -130,7 +130,7 @@ def get_short_urls_for_particular_user():
     )
 
 
-@api.route('/api/shorten-url/<int:id>/url')
+@api.route('/api/shorten-url/<int:id>/url/')
 def get_long_url_with_shorten_url_id(id):
     """
     returns a particular long url attached to a shorten url whose primary key
@@ -169,7 +169,12 @@ def get_long_url_with_shorten__url_name(shorten_url_name):
     except NotFound:
         return page_not_found("Requested resource was not found")
 
+<<<<<<< HEAD
 @api.route('/api/shorten-urls/<int:id>/url/update', methods=['PUT'])
+=======
+
+@api.route('/api/shorten-urls/<int:id>/url/update/', methods=['PUT'])
+>>>>>>> 7531d53... [Chore] Adds front slashes at the end of all routes
 @auth.login_required
 @permission
 def update_shorten_url_target(id):
@@ -217,6 +222,7 @@ def activate_shorten_url(id):
         return shorten_url.deactivate()
     except NotFound:
         return page_not_found("The resource you seek to update doesn't exist")
+
 
 @api.route('/api/shorten-urls/<shorten_url_name>/activate', methods=['PUT'])
 @api.route('/api/shorten-urls/<shorten_url_name>/deactivate', methods=['PUT'])
