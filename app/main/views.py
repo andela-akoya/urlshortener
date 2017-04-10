@@ -24,3 +24,4 @@ def index():
 def dashboard():
     # logout_user()
     return render_template('homepage.html')
+
