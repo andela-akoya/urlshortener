@@ -31,4 +31,5 @@ def create_app(config_name):
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)  # registers blueprint to app
     app.register_blueprint(api_blueprint, url_prefix='/api/v1.0')  # registers api blueprint to app
+    app.register_blueprint(api_blueprint)  # registers api blueprint to app
     return app
