@@ -11,6 +11,7 @@ from .forms import RegistrationForm, LoginForm
 @main.route('/register/', strict_slashes=False)
 @main.route('/login/', strict_slashes=False)
 def index():
+    # renders the index page when any of the above route is reached
     register_form = RegistrationForm()
     login_form = LoginForm()
     context = {"title": "Url Shortener", "registerForm": register_form,
