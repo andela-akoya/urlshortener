@@ -367,7 +367,7 @@ class APITestCase(unittest.TestCase):
         """
         data = json.dumps({"url": "https://www.google.com",
                            "shorten_url_length": 4})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.post(url_for('api.generate_shorten_url'),
                                     headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -380,7 +380,7 @@ class APITestCase(unittest.TestCase):
         when an invalid url is passed as data
         """
         data = json.dumps({"url": ".com"})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.post(url_for('api.generate_shorten_url'),
                                     headers=headers, data=data)
         expected_output = "Invalid url (Either url is empty or invalid." \
@@ -568,7 +568,7 @@ class APITestCase(unittest.TestCase):
         self.create_current_user_with_urls()
         self.create_shorten_urls()
         shorten_url_id = ShortenUrl.get_short_url_by_name("pwdse2").id
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/activate'.format(shorten_url_id)
         response = self.client.put(url, headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -601,7 +601,7 @@ class APITestCase(unittest.TestCase):
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         shorten_url.deactivate()
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/activate'.format(shorten_url.id)
         response = self.client.put(url, headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -648,7 +648,7 @@ class APITestCase(unittest.TestCase):
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         shorten_url.deactivate()
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/deactivate'.format(shorten_url.id)
         response = self.client.put(url, headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -684,9 +684,9 @@ class APITestCase(unittest.TestCase):
         url = '/api/v1.0/shorten-urls/{}/deactivate'.format(shorten_url.id)
         response = self.client.put(url, headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertTrue(response.status_code == 403)
-        self.assertTrue(json_response['message'] == "You are not authorized"
-                                                    " to use this service")
+        self.assertTrue(response.status_code == 400)
+        self.assertTrue(json_response['message'] == "Only token validation "
+                                                    "are acceptable")
 
     def test_deactivate_or_activate_invalid_shorten_url(self):
         """
@@ -694,7 +694,7 @@ class APITestCase(unittest.TestCase):
         is attempted to be deactivated or activated with invalid or
         non existing shorten_url id passed as argument.
         """
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/deactivate'.format(3)
         response = self.client.put(url, headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -711,7 +711,7 @@ class APITestCase(unittest.TestCase):
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": "http://www.change.com"})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(shorten_url.id)
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -726,7 +726,7 @@ class APITestCase(unittest.TestCase):
         self.create_current_user_with_urls()
         self.create_shorten_urls()
         data = json.dumps({"url": "http://www.change.com"})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(4)
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -743,7 +743,7 @@ class APITestCase(unittest.TestCase):
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": "www.change"})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(shorten_url.id)
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -761,7 +761,7 @@ class APITestCase(unittest.TestCase):
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": ""})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(shorten_url.id)
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -778,7 +778,7 @@ class APITestCase(unittest.TestCase):
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": "http://www.google.com"})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(shorten_url.id)
         response = self.client.put(url, headers=headers, data=data)
         expected_output = "You already have a shorten url for the proposed" \
@@ -800,7 +800,7 @@ class APITestCase(unittest.TestCase):
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": self.url2.url_name})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(shorten_url.id)
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -813,14 +813,14 @@ class APITestCase(unittest.TestCase):
         tests if a 404 message will be returned if a user tries
         to update the target of a shorten_url belonging to another user
         """
-        g.current_user = User.get_by_username("koyexes")
+        g.current_user = User.get_by_username("balrog")
         g.current_user.url.append(self.url1)
-        User.get_by_username("balrog").url.append(self.url2)
+        User.get_by_username("koyexes").url.append(self.url2)
         db.session.commit()
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": self.url2.url_name})
-        headers = self.get_api_headers("balrog", "admin")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(shorten_url.id)
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -838,7 +838,7 @@ class APITestCase(unittest.TestCase):
         self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": "https://www.change.com"})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(shorten_url.id)
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
