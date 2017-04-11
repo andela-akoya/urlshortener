@@ -14,11 +14,6 @@ class Config:
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
-    @staticmethod
-    def __init__(app):
-        # instantiates the app based on the configuration of the environment
-        pass
-
 
 class DevelopmentConfig(Config):
     """
