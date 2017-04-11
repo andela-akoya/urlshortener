@@ -5,7 +5,7 @@ from werkzeug.exceptions import NotFound
 from . import api
 from .authentication import auth
 from .custom_exceptions import ValidationException, UrlValidationException
-from .decorators import permission
+from .decorators import permission, token_required
 from .errors import page_not_found, custom_error
 from .utilities import Utilities
 from app.models import Url, ShortenUrl, AnonymousUser
@@ -41,6 +41,7 @@ def generate_shorten_url():
 @api.route('/urls/', strict_slashes=False)
 @api.route('/urls/popularity/', strict_slashes=False)
 @auth.login_required
+@token_required
 def get_urls():
     """ returns a list of all the long urls ordered by date of creation """
     url_list = Url.get_all_urls_by_dated_added()
@@ -58,6 +59,7 @@ def get_urls():
 @api.route('/shorten-urls/', strict_slashes=False)
 @api.route('/shorten-urls/popularity/', strict_slashes=False)
 @auth.login_required
+@token_required
 def get_shorten_urls():
     """ returns a list of all the shorten urls ordered by date of creation """
     shorten_url_list = ShortenUrl.get_all_shorten_urls_by_dated_added()
@@ -74,6 +76,7 @@ def get_shorten_urls():
 
 @api.route('/user/urls/', strict_slashes=False)
 @auth.login_required
+@token_required
 def get_urls_for_particular_user():
     """ returns a list of all the long urls pertaining to a particular user"""
     AnonymousUser.set_anonymous()
@@ -90,6 +93,7 @@ def get_urls_for_particular_user():
 
 @api.route('/user/shorten-urls/', strict_slashes=False)
 @auth.login_required
+@token_required
 def get_short_urls_for_particular_user():
     """
     returns a list of all the shorten urls pertaining to a
@@ -110,6 +114,7 @@ def get_short_urls_for_particular_user():
 
 
 @api.route('/shorten-url/<int:id>/url/', strict_slashes=False)
+@auth.login_required
 def get_long_url_with_shorten_url_id(id):
     """
     returns a particular long url attached to a shorten url whose primary key
@@ -130,6 +135,7 @@ def get_long_url_with_shorten_url_id(id):
 
 
 @api.route('/shorten-url/<shorten_url_name>/url/', strict_slashes=False)
+@auth.login_required
 def get_long_url_with_shorten__url_name(shorten_url_name):
     """
     returns a particular long url attached to a shorten url whose name
@@ -152,6 +158,7 @@ def get_long_url_with_shorten__url_name(shorten_url_name):
 
 @api.route('/shorten-urls/<int:id>/url/update/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
+@token_required
 @permission
 def update_shorten_url_target(id):
     """
@@ -187,6 +194,7 @@ def update_shorten_url_target(id):
 @api.route('/shorten-urls/<int:id>/activate/', methods=['PUT'], strict_slashes=False)
 @api.route('/shorten-urls/<int:id>/deactivate/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
+@token_required
 @permission
 def activate_shorten_url(id):
     """this function activates or deactivates a shorten_url"""
@@ -204,6 +212,7 @@ def activate_shorten_url(id):
 @api.route('/shorten-urls/<shorten_url_name>/activate/', methods=['PUT'], strict_slashes=False)
 @api.route('/shorten-urls/<shorten_url_name>/deactivate/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
+@token_required
 @permission
 def activate_shorten_url_with_name(shorten_url_name):
     """
