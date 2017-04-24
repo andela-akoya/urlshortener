@@ -2,7 +2,8 @@
 import json, time, unittest
 from base64 import b64encode
 
-from flask import url_for, g
+from flask import url_for, g, current_app
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
 from app import db, create_app
 from app.models import User, AnonymousUser, Url, ShortenUrl, ShortenUrlVisitLogs
@@ -143,7 +144,7 @@ class APITestCase(unittest.TestCase):
         tests if the appropriate status code and message is returned if
         an expired token is used for authentication
         """
-        token = self.user.generate_auth_token(2)
+        token = self.user.generate_auth_token(2)[1]
         time.sleep(4)
         response = self.client.get(url_for('api.get_token'),
                                    headers=self.get_api_headers(token, ''))
@@ -303,29 +304,30 @@ class APITestCase(unittest.TestCase):
         of the long url passed as post data
         """
         data = json.dumps({"url": "https://www.google.com"})
-        headers = self.get_api_headers("", "")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.post(url_for('api.generate_shorten_url'),
                                     headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 201)
-        self.assertTrue(json_response['shorten_url_name'])
-        self.assertEqual(len(json_response['shorten_url_name']), 6)
+        self.assertTrue(json_response['shorten_url']['shorten_url_name'])
+        self.assertEqual(len(json_response['shorten_url']['shorten_url_name'].split("/")[-1]), 6)
 
     def test_shorten_existing_long_url(self):
         """
-        test the shorten long url endpoint if it just shorten an existing
-        long url rather saving the long url again in the database
+        test the shorten long url endpoint with an existing
+        endpoint as argument if it shorten the existing
+        long url rather than saving the long url again in the database
         """
-        g.current_user = User.get_by_username("koyexes")
+        g.current_user = User.get_by_username("balrog")
         g.current_user.url.append(Url(url_name="http://www.google.com"))
         db.session.commit()
         data = json.dumps({"url": "http://www.google.com"})
-        headers = self.get_api_headers("", "")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.post(url_for('api.generate_shorten_url'),
                                     headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 201)
-        self.assertTrue(json_response['shorten_url_name'])
+        self.assertTrue(json_response['shorten_url']['shorten_url_name'])
         self.assertEqual(
             Url.query.filter_by(url_name="http://www.google.com").count(), 1)
 
@@ -336,21 +338,49 @@ class APITestCase(unittest.TestCase):
         """
         data = json.dumps({"url": "https://www.google.com",
                            "vanity_string": "ggle123"})
-        headers = self.get_api_headers("koyexes", "password")
+        headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.post(url_for('api.generate_shorten_url'),
                                     headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 201)
-        self.assertTrue(json_response['shorten_url_name'] == "ggle123")
+        self.assertTrue(json_response['shorten_url']['shorten_url_name'].split("/")[-1] == "ggle123")
+
+    def test_shorten_long_url_for_anonymous_using_custom_web_interface(self):
+        """
+        test the shorten long url endpoint if it shortens long url
+         for an anonymous user using the custom web interface
+        """
+        data = json.dumps({"url": "https://www.google.com"})
+        headers = self.get_api_headers(self.generate_token_for_anonymous(), '')
+        response = self.client.post(url_for('api.generate_shorten_url'),
+                                    headers=headers, data=data)
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(response.status_code == 201)
+        self.assertTrue(json_response['shorten_url']['shorten_url_name'])
+
+    def test_shorten_long_url_for_anonymous_using_external_interface(self):
+        """
+        test if the proper error response is returned for anonymous user not
+        using the custom web interface to access the shorten url endpoint
+        """
+        data = json.dumps({"url": "https://www.google.com"})
+        headers = self.get_api_headers('', '')
+        response = self.client.post(url_for('api.generate_shorten_url'),
+                                    headers=headers, data=data)
+        json_response = json.loads(response.data.decode('utf-8'))
+        excepted_output = "Only token validation are acceptable"
+        self.assertTrue(response.status_code == 400)
+        self.assertTrue(json_response['message'] == excepted_output)
 
     def test_shorten_long_url_with_vanity_string_for_anonymous(self):
         """
         test the shorten long url endpoint if it returns appropriate
-        error if vanity string is sent by an anonymous user
+        error if vanity string is sent by an anonymous user from 
+        the custom web interface
         """
         data = json.dumps({"url": "https://www.google.com",
                            "vanity_string": "ggle123"})
-        headers = self.get_api_headers("", "")
+        headers = self.get_api_headers(self.generate_token_for_anonymous(), '')
         response = self.client.post(url_for('api.generate_shorten_url'),
                                     headers=headers, data=data)
         expected_output = "Only registered users are liable to use" \
@@ -372,7 +402,7 @@ class APITestCase(unittest.TestCase):
                                     headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 201)
-        self.assertTrue(len(json_response['shorten_url_name']) == 4)
+        self.assertTrue(len(json_response['shorten_url']['shorten_url_name'].split("/")[-1]) == 4)
 
     def test_shorten_long_url_with_non_valid_url(self):
         """
@@ -383,8 +413,9 @@ class APITestCase(unittest.TestCase):
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.post(url_for('api.generate_shorten_url'),
                                     headers=headers, data=data)
-        expected_output = "Invalid url (Either url is empty or invalid." \
-                          " (Url must include either http:// or https://))"
+        expected_output = "Invalid url (Either url is empty or of invalid " \
+                          "format. (Url must include either http:// " \
+                          "or https://))"
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response['message'] == expected_output)
@@ -446,7 +477,9 @@ class APITestCase(unittest.TestCase):
         shorten_url_id = ShortenUrl.get_short_url_by_name("pwdse2").id
         headers = self.get_api_headers("koyexes", "password")
         url = '/api/v1.0/shorten-url/{}/url'.format(shorten_url_id)
-        response = self.client.get(url, headers=headers)
+        response = self.client.get(url,
+                                   environ_base ={"REMOTE_ADDR": "127.0.0.1",
+                                                  "REMOTE_PORT": 5000}, headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 200)
         self.assertTrue(json_response['url_name'] == "http://www.google.com")
@@ -508,7 +541,9 @@ class APITestCase(unittest.TestCase):
         shorten_url_name = ShortenUrl.get_short_url_by_name("pwdse2").shorten_url_name
         headers = self.get_api_headers("koyexes", "password")
         url = '/api/v1.0/shorten-url/{}/url'.format(shorten_url_name)
-        response = self.client.get(url, headers=headers)
+        response = self.client.get(url,
+                                   environ_base ={"REMOTE_ADDR": "127.0.0.1", "REMOTE_PORT": 5000},
+                                   headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 200)
         self.assertTrue(json_response['url_name'] == "http://www.google.com")
@@ -595,7 +630,7 @@ class APITestCase(unittest.TestCase):
     def test_activate_shorten_url_with_shorten_url_name(self):
         """
         tests the route if it successfully activates an inactive
-        shorten_url
+        shorten_url using the shorten_url id
         """
         self.create_current_user_with_urls()
         self.create_shorten_urls()
@@ -608,10 +643,29 @@ class APITestCase(unittest.TestCase):
         self.assertTrue(response.status_code == 200)
         self.assertTrue(json_response['message'] == "Successfully activated")
 
-    def test_deactivate_shorten_url(self):
+    def test_activate_shorten_url_with_shorten_url_name(self):
+        """
+        tests the route if it successfully activates an inactive
+        shorten_url using the shorten_url name
+        """
+        g.current_user = User.get_by_username("koyexes")
+        g.current_user.url.append(self.url1)
+        db.session.commit()
+        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
+                        long_url=Url.get_url_by_name(self.url1.name))
+        shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
+        shorten_url.deactivate()
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        url = '/api/v1.0/shorten-urls/{}/activate'.format("pwdse2")
+        response = self.client.put(url, headers=headers)
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(response.status_code == 200)
+        self.assertTrue(json_response['message'] == "Successfully activated")
+
+    def test_deactivate_shorten_url_with_id(self):
         """
         tests the route if it successfully deactivates an active
-        shorten_url
+        shorten_url with shorten_url id
         """
         self.create_current_user_with_urls()
         self.create_shorten_urls()
@@ -675,7 +729,7 @@ class APITestCase(unittest.TestCase):
     def test_activate_shorten_url_by_anonymous_user(self):
         """
         tests if the appropriate error will be returned when an
-        anonymous user tries to activate or deactivate a shorten url
+        anonymous user tries to deactivate a shorten url
         """
         self.create_current_user_with_urls()
         self.create_shorten_urls()
@@ -688,7 +742,8 @@ class APITestCase(unittest.TestCase):
         self.assertTrue(json_response['message'] == "Only token validation "
                                                     "are acceptable")
 
-    def test_deactivate_or_activate_invalid_shorten_url(self):
+
+    def test_deactivate_or_activate_invalid_shorten_url_id(self):
         """
         tests if the appropriately error message is returned if a shorten_url
         is attempted to be deactivated or activated with invalid or
@@ -700,7 +755,21 @@ class APITestCase(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 404)
         self.assertTrue(json_response['message'] == "The resource you seek to"
-                                                    " update doesn't exist")
+                                                    " deactivate doesn't exist")
+
+    def test_deactivate_or_activate_invalid_shorten_url_name(self):
+        """
+        tests if the appropriately error message is returned if a shorten_url
+        is attempted to be deactivated or activated with invalid or
+        non existing shorten_url name passed as argument.
+        """
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        url = '/api/v1.0/shorten-urls/{}/deactivate'.format("hello")
+        response = self.client.put(url, headers=headers)
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(response.status_code == 404)
+        self.assertTrue(json_response['message'] == "The resource you seek to"
+                                                    " deactivate doesn't exist")
 
     def test_update_shorten_url_target(self):
         """
@@ -747,8 +816,9 @@ class APITestCase(unittest.TestCase):
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(shorten_url.id)
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
-        expected_output = "Invalid url (Either url is empty or invalid." \
-                          " (Url must include either http:// or https://))"
+        expected_output = "Invalid url (Either url is empty or of invalid " \
+                          "format. (Url must include either http:// " \
+                          "or https://))"
         self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response["message"] == expected_output)
 
@@ -843,7 +913,7 @@ class APITestCase(unittest.TestCase):
         response = self.client.put(url, headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(Url.query.filter_by(url_name="https://www.change.com"))
-        self.assertTrue(json_response["long_url"] == "https://www.change.com" )
+        self.assertTrue(json_response["long_url"] == "https://www.change.com")
 
     def test_check_token_validity_with_valid_token(self):
         """

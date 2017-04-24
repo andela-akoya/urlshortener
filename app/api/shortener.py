@@ -1,5 +1,7 @@
 # coding=utf-8
-import random, string, uuid
+import string
+import uuid
+from random import SystemRandom
 
 
 class Shortener:
@@ -15,5 +17,5 @@ class Shortener:
                      + string.ascii_lowercase \
                      + str(uuid.uuid4()).replace("-", "")
 
-        return ''.join(random.SystemRandom().choice(characters)
+        return ''.join(SystemRandom().choice(characters)
                        for _ in range(short_url_length))

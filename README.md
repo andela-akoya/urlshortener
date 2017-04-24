@@ -1,1 +1,1 @@
-# urlshortener
+[![Build Status](https://travis-ci.org/andela-akoya/urlshortener.svg?branch=front-end-design)](https://travis-ci.org/andela-akoya/urlshortener)

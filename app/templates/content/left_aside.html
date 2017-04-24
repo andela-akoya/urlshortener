@@ -1,5 +1,4 @@
- <aside class="main-sidebar">
-    <!-- sidebar: style can be found in sidebar.less -->
+ <!-- sidebar: style can be found in sidebar.less -->
     <section class="sidebar">
       <!-- Sidebar user panel -->
       <div class="user-panel">
@@ -40,12 +39,12 @@
             <i class="fa fa-files-o"></i>
             <span>Shorten Urls</span>
             <span class="pull-right-container">
-              <span class="label label-primary pull-right">{{ context.shorten_url_list | length }}</span>
+              <span class="label label-primary pull-right">{{ context.total_shorten_urls }}</span>
             </span>
           </a>
           <ul class="treeview-menu">
-            <li><a href="../layout/top-nav.html"><i class="fa fa-circle-o"></i> Recently Added</a></li>
-            <li><a href="../layout/boxed.html"><i class="fa fa-circle-o"></i> Popularity</a></li>
+            <li><a id="shorten" href="#" onclick="hello()"><i class="fa fa-circle-o"></i> Recently Added</a></li>
+            <li><a href=""><i class="fa fa-circle-o"></i> Popularity</a></li>
           </ul>
         </li>
         <li class="treeview">
@@ -53,7 +52,7 @@
             <i class="fa fa-pie-chart"></i>
             <span>Long Urls</span>
             <span class="pull-right-container">
-              <span class="label label-primary pull-right">{{ context.url_list | length }}</span>
+              <span class="label label-primary pull-right">{{ context.total_urls }}</span>
             </span>
           </a>
           <ul class="treeview-menu">
@@ -73,4 +72,3 @@
       </ul>
     </section>
     <!-- /.sidebar -->
-  </aside>

@@ -8,8 +8,8 @@ class AuthenticationForm(FlaskForm):
     username = StringField('Username', validators=[
         DataRequired(), Length(1, 64), Regexp('^[A-Za-z0-9_.]*$',
                                               message='Username must have '
-                                                      'only letters,numbers, '
-                                                      'dots or underscores')])
+                                                      'only letters, numbers,'
+                                                      ' dots or underscores')])
 
 
 class RegistrationForm(AuthenticationForm):

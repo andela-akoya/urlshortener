@@ -16,7 +16,7 @@ class Utilities:
         if not request.is_json:
             raise ValidationException("Only json inputs are acceptable")
         elif len(request.data.decode('ascii')) == 0:
-            raise ValidationException("Empty data are not acceptable")
+            raise ValidationException("Empty data is not acceptable")
 
     @staticmethod
     def get_json(request):
@@ -43,7 +43,7 @@ class Utilities:
             raise ValidationException("The following {} are not valid keys"
                                       .format(invalid_keys))
         for key, values in data.items():
-            if not (data[key]):
+            if key in data and not (data[key]):
                 raise ValidationException("{} can't be empty".format(key))
 
     @staticmethod
@@ -62,3 +62,12 @@ class Utilities:
         for key in list(set(data.keys()).difference(keys)):
             del data[key]
         return data
+
+    @staticmethod
+    def validate_vanity_string(vanity_string):
+        """
+        checks if the vanity string contains spaces
+        and returns appropriate error response if it does
+        """
+        if vanity_string and " " in vanity_string:
+            raise ValidationException("Vanity string cannot contain spaces")

@@ -91,7 +91,7 @@ class UserModelTestCase(unittest.TestCase):
         self.user.password = "password"
         db.session.add(self.user)
         db.session.commit()
-        token = self.user.generate_auth_token(3600)
+        token = self.user.generate_auth_token(3600)[1]
         self.assertTrue(User.verify_auth_token(token))
 
     def test_verification_for_actual_user(self):
@@ -102,7 +102,7 @@ class UserModelTestCase(unittest.TestCase):
         self.user.password = "password"
         db.session.add(self.user)
         db.session.commit()
-        token = self.user.generate_auth_token(3600)
+        token = self.user.generate_auth_token(3600)[1]
         self.assertEqual(User.verify_auth_token(token),  self.user)
 
     def test_invalid_verification_of_auth_token(self):
@@ -385,7 +385,7 @@ class UrlModelTestCase(unittest.TestCase):
         """
         g.current_user = self.user
         output = Url.get_shorten_url(self.url, None, None)
-        self.assertIsInstance(output, ShortenUrl)
+        self.assertIsInstance(output[1], ShortenUrl)
 
     def test_get_shorten_url_with_vanity_string(self):
         """
@@ -393,7 +393,7 @@ class UrlModelTestCase(unittest.TestCase):
         argument as the shorten url rather than generating a short url
         """
         output = Url.get_shorten_url(self.url, "facebk", None)
-        self.assertEqual(output.name, "facebk")
+        self.assertEqual(output[1].name.split("/")[-1], "facebk")
 
     def test_get_shorten_url_with_short_url_length(self):
         """
@@ -401,7 +401,7 @@ class UrlModelTestCase(unittest.TestCase):
         equal to the value of the short_url_length argument.
         """
         output = Url.get_shorten_url(self.url, None, 10)
-        self.assertEqual(len(output.name), 10)
+        self.assertEqual(len(output[1].name.split("/")[-1]), 10)
 
     def test_delete_long_url(self):
         """
@@ -437,17 +437,17 @@ class ShortenUrlModelTestCase(unittest.TestCase):
         tests the function if it returns the value of the
         short_url_name property
         """
-        self.assertTrue(self.short_url.name == "pswd45")
+        self.assertTrue(self.short_url.name.split("/")[-1] == "pswd45")
 
     def test_url_name_property_setter(self):
         """
         tests the function if it properly sets the value of the
         short_url_name property
         """
-        self.assertTrue(self.short_url.name == "pswd45")
+        self.assertTrue(self.short_url.name.split("/")[-1] == "pswd45")
         self.short_url.name = "anoda45"
         self.assertNotEqual(self.short_url.name, "pswd45")
-        self.assertTrue(self.short_url.name == "anoda45")
+        self.assertTrue(self.short_url.name.split("/")[-1] == "anoda45")
 
     def test_get_short_url_by_name(self):
         """
@@ -481,7 +481,3 @@ class ShortenUrlModelTestCase(unittest.TestCase):
         self.assertTrue(ShortenUrl.get_short_url_by_name("pswd45"))
         self.short_url.delete()
         self.assertFalse(Url.get_url_by_name("pswd45"))
-
-
-
-

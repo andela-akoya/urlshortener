@@ -1,3 +1,4 @@
+import dotenv
 import os
 
 # this variable gets this file directory path
@@ -10,7 +11,7 @@ class Config:
     environment configuration
     """
     # gets the environment variable secret key or gives it a random value
-    SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(24)
+    SECRET_KEY = dotenv.get_variable(basedir + "/.env", 'SECRET_KEY')
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
