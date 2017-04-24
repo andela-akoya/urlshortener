@@ -1,0 +1,26 @@
+<div id="shortenUrlModal" class="modal fade " tabindex="-1" role="dialog" aria-labelledby="shortenUrlModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title text-danger">Create a Nitlink</h4>
+          </div>
+
+          <div class="modal-body">
+              <form id="shortenUrlForm" method="POST">
+                <div class="form-group ">
+                  <label class="control-label" for="long_url">Long Url</label>
+                  <input type="url" class="form-control" id="long_url" aria-describedby="helpBlock2" name="url" placeholder="Paste long url" required >
+                </div>
+                <div class="form-group ">
+                  <label class="control-label" for="vanity_string">Custom Shorten Name</label>
+                  <input type="text" class="form-control" id="vanity_string" aria-describedby="helpBlock2" name="vanity_string" placeholder="Enter a custom name for your shorten url">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-danger  btn-block", name="submit", value="submit">Create</button>
+                </div>
+               </form>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
