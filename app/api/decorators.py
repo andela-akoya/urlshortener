@@ -1,6 +1,9 @@
 # coding=utf-8
 from functools import wraps
+
 from flask import g
+
+from .custom_exceptions import ServerException
 from .errors import forbidden, bad_request
 
 
@@ -28,4 +31,17 @@ def token_required(f):
         if not g.token_used:
             return bad_request("Only token validation are acceptable")
         return f(*args, **kwargs)
+    return decorated_function
+
+
+def catch_exceptions(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            res = f(*args, **kwargs)
+        except Exception:
+            return ServerException("Something went wrong. "
+                                   "We will work on fixing "
+                                   "that right away.").broadcast()
+        return res
     return decorated_function

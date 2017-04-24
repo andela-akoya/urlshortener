@@ -18,7 +18,7 @@
   <div id="index-banner" name="named-banner" class="parallax-container " style="min-height: 580px;">
     <nav class="" role="navigation" style="box-shadow: none; background-color: #333; ">
         <div class="nav-wrapper container ">
-          <a id="logo-container" href="/index" class="brand-logo white-text" style="z-index: 100000 !important;">Nitly</a>
+          <a id="logo-container" href="/" class="brand-logo white-text" style="z-index: 100000 !important;">Nitly</a>
           <a href="#" data-activates="mobile-demo" class="button-collapse"><i class="material-icons">menu</i></a>
           <ul class="right hide-on-med-and-down">
               {% block login %}{% endblock %}
@@ -161,13 +161,13 @@
 
   <!--  Scripts-->
 
-  <script src="{{ url_for('static', filename='js/jquery-3.2.0.min.js')}}"></script>
+  <script src="{{ url_for('static', filename='js/others/jquery-3.2.0.min.js')}}"></script>
   <script src="{{ url_for('static', filename='js/materialize/materialize.js')}}"></script>
   <script src="{{ url_for('static', filename='js/materialize/init.js')}}"></script>
   <script src="{{ url_for('static', filename='js/base64.js')}}"></script>
-  <script src="{{ url_for('static', filename='js/functions.js')}}"></script>
+  <script src="{{ url_for('static', filename='js/api-functions.js')}}"></script>
   <script src="{{ url_for('static', filename='js/server.js')}}"></script>
-  <script src="{{ url_for('static', filename='js/smoothscroll.js')}}"></script>
+  <script src="{{ url_for('static', filename='js/others/smoothscroll.js')}}"></script>
   <script>
          $("#logo-container").on("click", function () {
             $("body").load("/index", "");

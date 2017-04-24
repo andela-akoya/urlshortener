@@ -34,3 +34,5 @@ class RegistrationForm(AuthenticationForm):
 class LoginForm(AuthenticationForm):
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField('Login')
+
+

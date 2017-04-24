@@ -1,11 +1,12 @@
 # coding=utf-8
 from datetime import datetime
+from time import time
 
-from flask import current_app, g, jsonify
+from flask import current_app, g, jsonify, request
 from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           BadSignature, SignatureExpired)
-from validators import url, ValidationFailure
+from validators import url
 from werkzeug.exceptions import NotFound
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -19,14 +20,14 @@ from app.api.shortener import Shortener
 class AnonymousUser(AnonymousUserMixin):
     @staticmethod
     def get_anonymous_user():
-        anonymous_user = User.get_by_username("Anonymous")
+        anonymous_user = User.get_by_username("AnonymousUser")
         if anonymous_user:
             return anonymous_user
         return AnonymousUser.create_anonymous_user()
 
     @staticmethod
     def create_anonymous_user():
-        anonymous_user = User(username='Anonymous', lastname="anonymous",
+        anonymous_user = User(username='AnonymousUser', lastname="anonymous",
                               firstname='anonymous', email='anonymous')
         db.session.add(anonymous_user)
         db.session.commit()
@@ -64,6 +65,7 @@ class User(db.Model, UserMixin):
                           lazy='dynamic')
     short_url = db.relationship("ShortenUrl",  backref='users',
                                 lazy='dynamic')
+    token = db.relationship("Token", backref="users", lazy="dynamic")
 
     @property
     def password(self):
@@ -87,7 +89,7 @@ class User(db.Model, UserMixin):
     def generate_auth_token(self, expiration):
         s = Serializer(current_app.config['SECRET_KEY'],
                        expires_in=expiration)
-        return s.dumps({'id': self.id}).decode('ascii')
+        return [s.now(), s.dumps({'id': self.id}).decode('ascii')]
 
     @staticmethod
     def verify_auth_token(token):
@@ -96,8 +98,9 @@ class User(db.Model, UserMixin):
             data = s.loads(token)
         except BadSignature or SignatureExpired:
             return None
-        user = User.query.get(data["id"])
-        return user
+        if data["id"] == "AnonymousUser":
+            return AnonymousUser()
+        return User.query.get(data["id"])
 
     @staticmethod
     def get_by_username(username):
@@ -156,7 +159,7 @@ class ShortenUrl(db.Model):
 
     @property
     def name(self):
-        return self.shorten_url_name
+        return request.url_root + self.shorten_url_name
 
     @name.setter
     def name(self, new_name):
@@ -179,8 +182,8 @@ class ShortenUrl(db.Model):
             raise ValidationException("Only registered users are liable "
                                       "to use vanity string")
         elif ShortenUrl.get_short_url_by_name(vanity_string):
-            raise ValidationException("{} is already in use."
-                                      " Please input another"
+            raise ValidationException("The vanity string '{}' is already in "
+                                      "use. Please input another vanity string"
                                       .format(vanity_string))
 
     def confirm_user(self):
@@ -188,8 +191,19 @@ class ShortenUrl(db.Model):
             raise NotFound
 
     def delete(self):
-        db.session.delete(self)
+        if self.deleted:
+            return bad_request("The shorten url has already been deleted")
+        self.deleted = True
         db.session.commit()
+        return jsonify({"message": "Successfully deleted"})
+
+    def revert_delete(self):
+        if not self.deleted:
+            return bad_request("You can't revert deletion on a "
+                               "shorten url that hasn't been deleted")
+        self.deleted = False
+        db.session.commit()
+        return jsonify({"message": "Successfully reverted deletion"})
 
     def activate(self):
         if self.is_active:
@@ -268,7 +282,7 @@ class Url(db.Model):
     def check_validity(new_url):
         if not url(new_url):
             raise UrlValidationException("Invalid url (Either url is empty"
-                                         " or invalid. (Url must include"
+                                         " or of invalid format. (Url must include"
                                          " either http:// or https://))")
 
     @staticmethod
@@ -287,20 +301,23 @@ class Url(db.Model):
 
     @staticmethod
     def get_shorten_url(new_url, vanity_string, short_url_length):
+        existing_long_url = Url.get_url_by_name(new_url.name)
+        if existing_long_url and existing_long_url in g.current_user.url:
+            return ["Shorten Url already exist for this long url",
+                    list(set(existing_long_url.short_url)
+                         .intersection(g.current_user.short_url))[0]
+                    ]
         shorten_url_name = Shortener.generate_shorten_name(short_url_length) \
             if not vanity_string else vanity_string
         while ShortenUrl.get_short_url_by_name(shorten_url_name):
             shorten_url_name = Shortener\
                                 .generate_shorten_name(short_url_length)
-        existing_long_url = Url.get_url_by_name(new_url.name)
-        if not existing_long_url:
-            Url.save(new_url, shorten_url_name)
-        elif not(existing_long_url in g.current_user.url):
+        if existing_long_url and not(existing_long_url in g.current_user.url):
             Url.save(existing_long_url, shorten_url_name)
         else:
-            return list(set(existing_long_url.short_url)
-                        .intersection(g.current_user.short_url))[0]
-        return ShortenUrl.get_short_url_by_name(shorten_url_name)
+            Url.save(new_url, shorten_url_name)
+        return ["Url successful shoretened",
+                ShortenUrl.get_short_url_by_name(shorten_url_name)]
 
     @staticmethod
     def save(url, shorten_url_name):
@@ -323,9 +340,65 @@ class ShortenUrlVisitLogs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shorten_url = db.Column(db.Integer, db.ForeignKey('shorten_url.id'))
     date = db.Column(db.DateTime, default=datetime.utcnow())
+    ip_address = db.Column(db.String, nullable=False)
+    port = db.Column(db.Integer)
 
     @staticmethod
-    def create_visit_log_instance(shorten_url):
-        return ShortenUrlVisitLogs(
-            shorten_url=shorten_url
+    def create_visit_log_instance(shorten_url, remote_addr, port):
+        shorten_url_visit = ShortenUrlVisitLogs(
+            shorten_url=shorten_url,
+            ip_address=remote_addr,
+            port=port,
         )
+        return shorten_url_visit
+
+
+
+class Token(db.Model):
+    __tablename__ = "token"
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String, nullable=False)
+    user = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    creation_time = db.Column(db.Integer, nullable=False)
+    expiration_time = db.Column(db.Integer, nullable=False)
+
+    @staticmethod
+    def check_existence_of_valid_token(user_id):
+        """
+        checks if a valid token exist in the database for a particular user
+        whose user id is passed as argument.
+        It returns the token if a valid one exists else None is returned
+        :param user_id: 
+        :return list or None: 
+        """
+        Token.delete_expired_token()
+        token_instance = Token.query.filter_by(user=user_id).first()
+        if token_instance:
+            return [token_instance.creation_time, token_instance.token]
+
+    @staticmethod
+    def save(token_generated):
+        """
+        this function saves an instance of the token model into 
+        the database
+        :param token_generated
+        :return: 
+        """
+        token_instance = Token(token=token_generated[1],
+                               user=g.current_user.id,
+                               creation_time=token_generated[0],
+                               expiration_time=token_generated[0] + 3600)
+        db.session.add(token_instance)
+        db.session.commit()
+
+    @staticmethod
+    def delete_expired_token():
+        """
+        removes all expired token s from the database
+        :return None: 
+        """
+        expired_tokens = Token.query.filter(Token.expiration_time <= time()).all()
+        if expired_tokens:
+            for token in expired_tokens:
+                db.session.delete(token)
+            db.session.commit()
