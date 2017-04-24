@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+{% include "content/header.html" %}
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+    {% include "content/nav.html" %}
+     <aside id="left-aside-nav" class="main-sidebar">
+        {% include "content/left_aside.html" %}
+     </aside>
+    <div class="content-wrapper">
+        {% include "content/main_content.html" %}
+    </div>
+    {% include "content/footer.html" %}
+      <!-- Control Sidebar -->
+    <aside id="right-side-nav" class="control-sidebar control-sidebar-dark">
+        {% include "content/right_aside.html" %}
+    </aside>
+  <!-- Add the sidebar's background. This div must be placed
+       immediately after the control sidebar -->
+    <div class="control-sidebar-bg"></div>
+</div>
+    {% include "content/plugins.html" %}
+<script>
+    $('.modal').modal();
+</script>
+{% include 'content/modals.html' %}
+ <script src="{{ url_for('static', filename='js/base64.js')}}"></script>
+ <script src="{{ url_for('static', filename='js/functions.js')}}"></script>
+<script src="{{ url_for('static', filename='js/server.js')}}"></script>
+
+</body>
+</html>
