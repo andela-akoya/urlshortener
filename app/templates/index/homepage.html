@@ -6,6 +6,8 @@
 {% endblock %}
 {% block login %}<li><a class="waves-effect waves-light btn" href="#loginModal">Login</a></li>{% endblock %}
 {% block signup %}<li><button class="waves-effect waves-light btn" data-target="signupModal">Sign up</button></li>{% endblock %}
+{% block login_mobile %}<li><a class="waves-effect waves-light btn" href="#loginModal">Login</a></li>{% endblock %}
+{% block signup_mobile %}<li><button class="waves-effect waves-light btn" data-target="signupModal">Sign up</button></li>{% endblock %}
 {%  block signupModal %}
 <!-- Modal Structure -->
 <div id="loginModal" class="modal" style="max-width: 350px;">
@@ -13,7 +15,7 @@
     <div class="modal-content ">
       <h5>Login </h5>
       <div class="row">
-        <form id="loginForm" class="col s12" method="" action="/api/login">
+        <form id="loginForm" class="col s12" method="POST" action="">
           <div class="row">
               {{ context.loginForm.hidden_tag() }}
               {{ render_login(context.loginForm.username, class="validate", required="True") }}
@@ -33,7 +35,7 @@
     <div class="modal-content ">
       <h5>Create an Account </h5>
       <div class="row">
-        <form id="signupForm" class="col s12" method="post" action="/api/register">
+        <form id="signupForm" class="col s12" method="post" action="">
           <div class="row">
               {{ context.registerForm.hidden_tag() }}
               {{ render_signup(context.registerForm.lastname, class="validate ", required="True") }}
@@ -52,7 +54,6 @@
   </div>
 
 {% endblock %}
-
 {% block script %}
  <script>
       $(document).ready(function(){
@@ -72,6 +73,17 @@
                   {% endif %}
             {% endwith %}
         }
+
+         var options = [
+              {selector: '#image1', offset: 10, callback: function(el) {
+                Materialize.fadeInImage($(el));
+              } },
+             {selector: '#url-stats', offset: 80, callback: function(el) {
+                Materialize.fadeInImage($(el));
+              } }
+         ];
+         Materialize.scrollFire(options);
+
       });
  </script>
 
