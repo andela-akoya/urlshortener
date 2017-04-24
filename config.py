@@ -22,8 +22,7 @@ class DevelopmentConfig(Config):
     variables such as the database path and the debug value to True
     """
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')
+    SQLALCHEMY_DATABASE_URI = dotenv.get_variable(basedir + "/.env", 'DEV_DATABASE_URL').format(basedir)
 
 
 class TestingConfig(Config):
@@ -34,8 +33,7 @@ class TestingConfig(Config):
     variable value to True
     """
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'data-test.sqlite')
+    SQLALCHEMY_DATABASE_URI = dotenv.get_variable(basedir + "/.env", 'TEST_DATABASE_URL').format(basedir)
 
 
 class ProductionConfig(Config):
@@ -44,8 +42,7 @@ class ProductionConfig(Config):
     base configuration class and sets appropriate environment specific
     variables such as the database path for production
     """
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+    SQLALCHEMY_DATABASE_URI = dotenv.get_variable(basedir + "/.env", 'TEST_DATABASE_URL').format(basedir)
 
 # setting all the various environment configuration into the config dictionary
 config = {
