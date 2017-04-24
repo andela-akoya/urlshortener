@@ -1,6 +1,7 @@
 import dotenv
 import os
 
+dotenv.load()
 # this variable gets this file directory path
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -11,7 +12,7 @@ class Config:
     environment configuration
     """
     # gets the environment variable secret key or gives it a random value
-    SECRET_KEY = dotenv.get_variable(basedir + "/.env", 'SECRET_KEY')
+    SECRET_KEY = dotenv.get('SECRET_KEY')
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
@@ -23,7 +24,7 @@ class DevelopmentConfig(Config):
     variables such as the database path and the debug value to True
     """
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = dotenv.get_variable(basedir + "/.env", 'DEV_DATABASE_URL').format(basedir)
+    SQLALCHEMY_DATABASE_URI = dotenv.get('DEV_DATABASE_URL').format(basedir)
 
 
 class TestingConfig(Config):
@@ -34,7 +35,7 @@ class TestingConfig(Config):
     variable value to True
     """
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = dotenv.get_variable(basedir + "/.env", 'TEST_DATABASE_URL').format(basedir)
+    SQLALCHEMY_DATABASE_URI = dotenv.get('TEST_DATABASE_URL').format(basedir)
 
 
 class ProductionConfig(Config):
@@ -43,7 +44,7 @@ class ProductionConfig(Config):
     base configuration class and sets appropriate environment specific
     variables such as the database path for production
     """
-    SQLALCHEMY_DATABASE_URI = dotenv.get_variable(basedir + "/.env", 'TEST_DATABASE_URL').format(basedir)
+    SQLALCHEMY_DATABASE_URI = dotenv.get('DATABASE_URL').format(basedir)
 
 # setting all the various environment configuration into the config dictionary
 config = {
