@@ -39,6 +39,12 @@ def admin_permission(f):
 
 
 def token_required(f):
+    """
+    this decorator checks if a token based authentication was used by
+    the user trying to access any endpoint resource.
+    :param f: 
+    :return: 
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not g.token_used:
@@ -48,6 +54,13 @@ def token_required(f):
 
 
 def catch_exceptions(f):
+    """
+    this decorator catches any other exception that wasn't 
+    caught during implementation, but might arises during its
+    execution
+    :param f: 
+    :return: 
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:

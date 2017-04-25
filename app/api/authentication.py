@@ -5,11 +5,13 @@ from flask import request, jsonify, g
 
 from . import api, errors
 from .custom_exceptions import ServerException, ValidationException
+from.decorators import catch_exceptions
 from .utilities import Utilities
 from app.models import User, AnonymousUser, Token
 
 
 @api.route('/register', methods=['POST'], strict_slashes=False)
+@catch_exceptions
 def register():
     """this function registers a new user"""
     try:
@@ -27,12 +29,6 @@ def register():
         User.save(User.get_from_json(data))
     except ValidationException as e:
         return e.broadcast()
-    except Exception:
-        return ServerException(
-            "Registration failed due to an "
-            "internal server error."
-            "Please try again later")\
-            .broadcast()
 
     return jsonify({"message": "Successfully Registered"}), 201
 
@@ -68,7 +64,7 @@ def check_token_validity(token):
     return jsonify({"is_valid": bool(User.verify_auth_token(token))})
 
 
-@api.route('/<username>/<user_id>/token/refresh/', strict_slashes=False)
+@api.route('/<username>/<int:user_id>/token/refresh/', strict_slashes=False)
 def refresh_token(username, user_id):
     """
     this function refreshes an expired token. It also takes in the username and user_id

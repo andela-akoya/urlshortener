@@ -164,6 +164,10 @@ class ShortenUrl(db.Model):
     def name(self, new_name):
         self.shorten_url_name = new_name
 
+    @property
+    def visit(self):
+        return self.visits
+
     @staticmethod
     def get_short_url_by_name(name):
         return ShortenUrl.query.filter_by(shorten_url_name=name).first()
@@ -202,7 +206,7 @@ class ShortenUrl(db.Model):
                                "shorten url that hasn't been deleted")
         self.deleted = False
         db.session.commit()
-        return jsonify({"message": "Successfully reverted deletion"})
+        return jsonify({"message": "Successfully restored"})
 
     def activate(self):
         if self.is_active:
@@ -246,8 +250,8 @@ class ShortenUrl(db.Model):
 
     @staticmethod
     def get_all_shorten_urls_by_popularity():
-        return ShortenUrl.query.order_by(db.desc(ShortenUrl.number_of_visit))\
-            .filter_by(is_active=True, deleted=False).all()
+        shorten_url_list = ShortenUrl.query.filter_by(is_active=True, deleted=False).all()
+        return sorted(shorten_url_list, key=lambda k: ((k.visit.count()),)[0], reverse=True)
 
 class Url(db.Model):
     """

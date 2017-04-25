@@ -5,7 +5,7 @@ from werkzeug.exceptions import NotFound
 from . import api
 from .authentication import auth
 from .custom_exceptions import ValidationException, UrlValidationException
-from .decorators import token_required, catch_exceptions
+from .decorators import token_required, catch_exceptions, admin_permission
 from .errors import page_not_found, custom_error
 from .utilities import Utilities
 from app.models import Url, ShortenUrl, AnonymousUser, ShortenUrlVisitLogs
@@ -45,6 +45,7 @@ def generate_shorten_url():
 @api.route('/urls/', strict_slashes=False)
 @auth.login_required
 @token_required
+@admin_permission
 @catch_exceptions
 def get_urls():
     """Returns a list of all the long urls ordered by date of creation"""
@@ -168,7 +169,6 @@ def get_total_urls_for_particular_user():
 
 
 @api.route('/shorten-url/<int:id>/url/', strict_slashes=False)
-@auth.login_required
 @catch_exceptions
 def get_long_url_with_shorten_url_id(id):
     """
@@ -319,7 +319,7 @@ def delete_shorten_url(id):
         return page_not_found("The resource you seek to delete doesn't exist")
 
 
-@api.route('/shorten-urls/<int:id>/revert-deletion/', methods=['PUT'], strict_slashes=False)
+@api.route('/shorten-urls/<int:id>/restore/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
 @token_required
 @catch_exceptions
