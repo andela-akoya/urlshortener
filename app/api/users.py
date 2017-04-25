@@ -42,13 +42,8 @@ def generate_shorten_url():
         return e.broadcast()
 
 
-<<<<<<< HEAD
 @api.route('/urls/', strict_slashes=False)
-=======
-@api.route('/api/user/urls')
->>>>>>> [chore] renames get url endpoints
 @auth.login_required
-<<<<<<< HEAD
 @token_required
 @admin_permission
 @catch_exceptions
