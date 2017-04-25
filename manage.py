@@ -6,12 +6,13 @@ import unittest
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager, Shell, prompt_bool
 
-from app import create_app, db
 
 COV = None
 if os.environ.get('FLASK_COVERAGE'):
-    COV = coverage.coverage(branch=True, include='app/*')
+    COV = coverage.coverage(branch=True, include='app/*', omit='app/main/*')
     COV.start()
+
+from app import create_app, db
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)  # initializes manager and registers the app
@@ -53,8 +54,6 @@ def test():
         covdir = os.path.join(basedir, 'tmp/coverage')
         COV.html_report(directory=covdir)
         print('HTML version: file://%s/index.html' % covdir)
-        COV.erase()
-
 
 if __name__ == "__main__":
     try:
