@@ -6,8 +6,7 @@ from flask import url_for, g, current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
 from app import db, create_app
-from app.models import User, AnonymousUser, Url, ShortenUrl
-
+from app.models import User, AnonymousUser, Url, ShortenUrl, ShortenUrlVisitLogs
 
 
 class APITestCase(unittest.TestCase):
@@ -17,8 +16,8 @@ class APITestCase(unittest.TestCase):
         self.app_context.push()
         db.create_all()
         self.client = self.app.test_client()
-        self.user = User(username="koyexes", lastname="koya",
-                         firstname="gabriel", email="koyexes@gmail.com",
+        self.user = User(username="koyexes", lastname="kumbaya",
+                         firstname="moment", email="noreply@gmail.com",
                          is_admin=True)
         self.user2 = User(username="balrog", lastname="admin",
                          firstname="admin", email="admin@gmail.com")
@@ -60,6 +59,30 @@ class APITestCase(unittest.TestCase):
         s = Serializer(current_app.config['SECRET_KEY'],
                        expires_in=10)
         return s.dumps({'id': "AnonymousUser"}).decode('ascii')
+
+    def create_current_user_with_urls(self):
+        """
+        this function creates a current_user and saves long urls
+        with the users id for further usage in the test suite
+        """
+        g.current_user = User.get_by_username("koyexes")
+        g.current_user.url.append(self.url1)
+        g.current_user.url.append(self.url2)
+        g.current_user.url.append(self.url3)
+        db.session.commit()
+
+    def create_shorten_urls(self, su_name1="pwdse2", su_name2="1Qewt4",
+                            su_name3="re234e"):
+        """
+        this function creates  and saves shorten urls for later use 
+        in the test suite
+        """
+        ShortenUrl.save(shorten_url_name=su_name1, user=g.current_user,
+                        long_url=Url.get_url_by_name(self.url1.name))
+        ShortenUrl.save(shorten_url_name=su_name2, user=g.current_user,
+                        long_url=Url.get_url_by_name(self.url1.name))
+        ShortenUrl.save(shorten_url_name=su_name3, user=g.current_user,
+                        long_url=Url.get_url_by_name(self.url1.name))
 
     def test_403(self):
         """
@@ -251,11 +274,7 @@ class APITestCase(unittest.TestCase):
         tests the get_urls endpoint if it returns a list of all the long urls
         have been shortened for a particular user
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        g.current_user.url.append(self.url2)
-        g.current_user.url.append(self.url3)
-        db.session.commit()
+        self.create_current_user_with_urls()
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.get(url_for('api.get_urls_for_particular_user'),
                                    headers=headers)
@@ -271,12 +290,7 @@ class APITestCase(unittest.TestCase):
         g.current_user = User.get_by_username("koyexes")
         g.current_user.url.append(self.url1)
         db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
-        ShortenUrl.save(shorten_url_name="1Qewt4", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
-        ShortenUrl.save(shorten_url_name="re234e", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_shorten_urls()
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.get(
             url_for('api.get_short_urls_for_particular_user'),headers=headers)
@@ -411,11 +425,7 @@ class APITestCase(unittest.TestCase):
         tests the get_urls endpoint if it returns a list of all the long urls
         that has been shortened
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        g.current_user.url.append(self.url2)
-        g.current_user.url.append(self.url3)
-        db.session.commit()
+        self.create_current_user_with_urls()
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.get(url_for('api.get_urls'), headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -427,31 +437,43 @@ class APITestCase(unittest.TestCase):
         tests the get_shorten_urls endpoint if it returns a list of all the
         shorten urls
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
-        ShortenUrl.save(shorten_url_name="1Qewt4", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
-        ShortenUrl.save(shorten_url_name="re234e", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.get("/api/v1.0/shorten-urls/", headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertIsInstance(json_response["shorten_url_list"], list)
         self.assertEqual(len(json_response["shorten_url_list"]), 3)
 
+    def test_get_shorten_urls_by_popularity(self):
+        """
+        tests the get_shorten_urls endpoint if it returns a list of all the
+        shorten urls and orders them based on their popularity
+        """
+        self.create_current_user_with_urls()
+        visit1 = ShortenUrlVisitLogs(id=1,shorten_url=1,ip_address="127.0.0.1", port=34567)
+        visit2 = ShortenUrlVisitLogs(id=2,shorten_url=2,ip_address="127.0.0.2", port=21356)
+        visit3 = ShortenUrlVisitLogs(id=3,shorten_url=3,ip_address="127.0.0.3", port=52345)
+        visit4 = ShortenUrlVisitLogs(id=4,shorten_url=3,ip_address="127.0.0.4", port=52345)
+        visit5 = ShortenUrlVisitLogs(id=5,shorten_url=3,ip_address="127.0.0.5", port=52345)
+        visit6 = ShortenUrlVisitLogs(id=6,shorten_url=2,ip_address="127.0.0.3", port=52345)
+        db.session.add_all([visit1, visit2, visit3, visit4, visit5, visit6])
+        db.session.commit()
+        self.create_shorten_urls()
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        response = self.client.get("/api/v1.0/shorten-urls/popularity", headers=headers)
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(json_response["shorten_url_list"][0]["shorten_url_name"], "re234e")
+        self.assertEqual(json_response["shorten_url_list"][1]["shorten_url_name"], "1Qewt4")
+        self.assertEqual(json_response["shorten_url_list"][2]["shorten_url_name"], "pwdse2")
+
     def test_get_long_url_with_shorten_url_id(self):
         """
         tests if the appropriately mapped long url is returned based on the
         shorten url's id passed in as argument
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url_id = ShortenUrl.get_short_url_by_name("pwdse2").id
         headers = self.get_api_headers("koyexes", "password")
         url = '/api/v1.0/shorten-url/{}/url'.format(shorten_url_id)
@@ -467,17 +489,46 @@ class APITestCase(unittest.TestCase):
         tests if the appropriately error message is returned based on the
         an invalid shorten url's id passed in as argument
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         headers = self.get_api_headers("koyexes", "password")
-        url = '/api/v1.0/shorten-url/{}/url'.format(3)
+        url = '/api/v1.0/shorten-url/{}/url'.format(6)
         response = self.client.get(url, headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
         expected_output = "Requested resource was not found"
         self.assertTrue(response.status_code == 404)
+        self.assertTrue(json_response['message'] == expected_output)
+
+    def test_get_long_url_with_deactivated_shorten_url_id(self):
+        """
+        tests if the appropriately error message is returned based on the
+        a deactivated shorten url id passed in as argument to retrieve a
+        long url
+        """
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
+        ShortenUrl.query.get(1).deactivate()
+        url = '/api/v1.0/shorten-url/{}/url'.format(1)
+        response = self.client.get(url)
+        json_response = json.loads(response.data.decode('utf-8'))
+        expected_output = "The shorten url has been deactivated"
+        self.assertTrue(response.status_code == 400)
+        self.assertTrue(json_response['message'] == expected_output)
+
+    def test_get_long_url_with_deleted_shorten_url_id(self):
+        """
+        tests if the appropriately error message is returned based on the
+        a deleted shorten url id passed in as argument to retrieve a
+        long url
+        """
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
+        ShortenUrl.query.get(1).delete()
+        url = '/api/v1.0/shorten-url/{}/url'.format(1)
+        response = self.client.get(url)
+        json_response = json.loads(response.data.decode('utf-8'))
+        expected_output = "The shorten url has been deleted"
+        self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response['message'] == expected_output)
 
     def test_get_long_url_with_shorten_url_name(self):
@@ -486,11 +537,8 @@ class APITestCase(unittest.TestCase):
         shorten url's name passed in as argument
         """
 
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url_name = ShortenUrl.get_short_url_by_name("pwdse2").shorten_url_name
         headers = self.get_api_headers("koyexes", "password")
         url = '/api/v1.0/shorten-url/{}/url'.format(shorten_url_name)
@@ -506,11 +554,8 @@ class APITestCase(unittest.TestCase):
         tests if the appropriately error message is returned based on the
         an invalid shorten url name passed in as argument
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         headers = self.get_api_headers("koyexes", "password")
         url = '/api/v1.0/shorten-url/{}/url'.format("pwresq")
         response = self.client.get(url, headers=headers)
@@ -519,16 +564,45 @@ class APITestCase(unittest.TestCase):
         self.assertTrue(response.status_code == 404)
         self.assertTrue(json_response['message'] == expected_output)
 
+    def test_get_long_url_with_deactivated_shorten_url_name(self):
+        """
+        tests if the appropriately error message is returned based on the
+        a deactivated shorten url name passed in as argument to retrieve a
+        long url
+        """
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
+        ShortenUrl.query.get(1).deactivate()
+        url = '/api/v1.0/shorten-url/{}/url'.format("pwdse2")
+        response = self.client.get(url)
+        json_response = json.loads(response.data.decode('utf-8'))
+        expected_output = "The shorten url has been deactivated"
+        self.assertTrue(response.status_code == 400)
+        self.assertTrue(json_response['message'] == expected_output)
+
+    def test_get_long_url_with_deleted_shorten_url_name(self):
+        """
+        tests if the appropriately error message is returned based on the
+        a deleted shorten url name passed in as argument to retrieve a
+        long url
+        """
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
+        ShortenUrl.query.get(1).delete()
+        url = '/api/v1.0/shorten-url/{}/url'.format("pwdse2")
+        response = self.client.get(url)
+        json_response = json.loads(response.data.decode('utf-8'))
+        expected_output = "The shorten url has been deleted"
+        self.assertTrue(response.status_code == 400)
+        self.assertTrue(json_response['message'] == expected_output)
+
     def test_activate_an_active_shorten_url(self):
         """
         tests if the appropriately error message is returned if an already
         active shorten_url is attempted to be activated
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url_id = ShortenUrl.get_short_url_by_name("pwdse2").id
         headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/activate'.format(shorten_url_id)
@@ -543,11 +617,8 @@ class APITestCase(unittest.TestCase):
         tests the route if it successfully activates an inactive
         shorten_url using the shorten_url id
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         shorten_url.deactivate()
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -562,11 +633,8 @@ class APITestCase(unittest.TestCase):
         tests the route if it successfully activates an inactive
         shorten_url using the shorten_url name
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         shorten_url.deactivate()
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -581,11 +649,8 @@ class APITestCase(unittest.TestCase):
         tests the route if it successfully deactivates an active
         shorten_url with shorten_url id
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/deactivate'.format(shorten_url.id)
@@ -600,11 +665,8 @@ class APITestCase(unittest.TestCase):
         tests the route if it successfully deactivates an active
         shorten_url with shorten_url name
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/deactivate'.format("pwdse2")
         response = self.client.put(url, headers=headers)
@@ -618,11 +680,8 @@ class APITestCase(unittest.TestCase):
         tests if the appropriately error message is returned if an already
         inactive shorten_url is attempted to be deactivated
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         shorten_url.deactivate()
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -638,11 +697,8 @@ class APITestCase(unittest.TestCase):
         tests if the appropriate error will be returned when an
         anonymous user tries to deactivate a shorten url
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         headers = self.get_api_headers("", "")
         url = '/api/v1.0/shorten-urls/{}/deactivate'.format(shorten_url.id)
@@ -657,11 +713,8 @@ class APITestCase(unittest.TestCase):
         tests if the appropriate error will be returned when an
         anonymous user tries to activate a shorten url
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=Url.get_url_by_name(self.url1.name))
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         shorten_url.deactivate()
         headers = self.get_api_headers("", "")
@@ -705,12 +758,8 @@ class APITestCase(unittest.TestCase):
         tests if a shorten_url mapped target long_url is properly updated
         to a new long_url passed in thorough the request data
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        long_url = Url.get_url_by_name(self.url1.name)
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=long_url)
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": "http://www.change.com"})
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -725,12 +774,8 @@ class APITestCase(unittest.TestCase):
         tests if appropriate error messages will be returned when an invalid
         short_url id is passed as argument
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        long_url = Url.get_url_by_name(self.url1.name)
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=long_url)
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         data = json.dumps({"url": "http://www.change.com"})
         headers = self.get_api_headers(self.use_token_auth(), "")
         url = '/api/v1.0/shorten-urls/{}/url/update'.format(4)
@@ -745,12 +790,8 @@ class APITestCase(unittest.TestCase):
         tests if appropriate error messages will be returned when an invalid
         short_url format is passed as data
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        long_url = Url.get_url_by_name(self.url1.name)
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=long_url)
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": "www.change"})
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -768,12 +809,8 @@ class APITestCase(unittest.TestCase):
         tests if appropriate error messages will be returned when an empty
         value is passed as data
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
-        long_url = Url.get_url_by_name(self.url1.name)
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=long_url)
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": ""})
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -789,12 +826,9 @@ class APITestCase(unittest.TestCase):
         a shorten_url target with a long_url that has already been shortened
         by the user
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
-        db.session.commit()
+        self.create_current_user_with_urls()
         long_url = Url.get_url_by_name(self.url1.name)
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=long_url)
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": "http://www.google.com"})
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -816,9 +850,7 @@ class APITestCase(unittest.TestCase):
         g.current_user.url.append(self.url1)
         User.get_by_username("balrog").url.append(self.url2)
         db.session.commit()
-        long_url = Url.get_url_by_name(self.url1.name)
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=long_url)
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": self.url2.url_name})
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -827,8 +859,7 @@ class APITestCase(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 200)
         self.assertTrue(json_response["long_url"] == self.url2.url_name)
-        self.assertEqual(
-            Url.query.filter_by(url_name=self.url2.url_name).count(), 1)
+        self.assertEqual(Url.query.filter_by(url_name=self.url2.url_name).count(), 1)
 
     def test_update_shorten_url_target_not_owned(self):
         """
@@ -839,9 +870,7 @@ class APITestCase(unittest.TestCase):
         g.current_user.url.append(self.url1)
         User.get_by_username("koyexes").url.append(self.url2)
         db.session.commit()
-        long_url = Url.get_url_by_name(self.url1.name)
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=long_url)
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": self.url2.url_name})
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -856,13 +885,10 @@ class APITestCase(unittest.TestCase):
         """
         tests if a new long_url will be created as target for the shorten_url
         """
-        g.current_user = User.get_by_username("koyexes")
-        g.current_user.url.append(self.url1)
+        self.create_current_user_with_urls()
         User.get_by_username("balrog").url.append(self.url1)
         db.session.commit()
-        long_url = Url.get_url_by_name(self.url1.name)
-        ShortenUrl.save(shorten_url_name="pwdse2", user=g.current_user,
-                        long_url=long_url)
+        self.create_shorten_urls()
         shorten_url = ShortenUrl.get_short_url_by_name("pwdse2")
         data = json.dumps({"url": "https://www.change.com"})
         headers = self.get_api_headers(self.use_token_auth(), "")
@@ -871,6 +897,128 @@ class APITestCase(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(Url.query.filter_by(url_name="https://www.change.com"))
         self.assertTrue(json_response["long_url"] == "https://www.change.com")
+
+    def test_check_token_validity_with_valid_token(self):
+        """
+        tests the check token validity endpoint returns
+        True for a valid token (token that hasn't expired)
+        """
+        token = self.user.generate_auth_token(10)[1]
+        response = self.client.get('api/v1.0/token/{}/validity/'.format(token))
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(json_response["is_valid"])
+
+    def test_check_token_validity_with_expired_token(self):
+        """
+        tests the check token validity endpoint returns
+        False for an expired token (token that hasn't expired)
+        """
+        token = self.user.generate_auth_token(1)[1]
+        time.sleep(2)
+        response = self.client.get('api/v1.0/token/{}/validity/'.format(token))
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertFalse(json_response["is_valid"])
+
+    def test_refresh_token(self):
+        """
+        test if a new token is returned on validation of 
+        the users username and id
+        """
+        username = self.user.username
+        user_id = User.query.filter_by(username=username).first().id
+        response = self.client.get("api/v1.0/{}/{}/token/refresh"
+                                   .format(username, user_id))
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(response.status_code == 200)
+        self.assertTrue(json_response['token'])
+        self.assertTrue(json_response['message'] ==
+                        "Token refresh successful")
+
+    def test_total_shorten_urls_for_particular_user(self):
+        """
+        tests the route if it returns the total shorten urls
+        belonging to a user
+        """
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        url = '/api/v1.0/user/shorten-urls/total/'
+        response = self.client.get(url, headers=headers, data="")
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(json_response["total_shorten_urls"] == 3)
+
+    def test_total_long_urls_for_particular_user(self):
+        """
+        tests the route if it returns the total long urls
+        a particular user
+        """
+        self.create_current_user_with_urls()
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        url = '/api/v1.0/user/urls/total/'
+        response = self.client.get(url, headers=headers, data="")
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(json_response["total_urls"] == 3)
+
+    def test_get_user_profile(self):
+        """
+        tests the route if it returns the profile of the
+        current user
+        """
+        self.create_current_user_with_urls()
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        url = '/api/v1.0/user/profile/'
+        response = self.client.get(url, headers=headers, data="")
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(json_response["username"] == "koyexes")
+        self.assertTrue(json_response["firstname"] == "moment")
+        self.assertTrue(json_response["lastname"] == "kumbaya")
+
+    def test_delete_shorten_url(self):
+        """
+        tests the route if it successfully deletes a shorten urls
+        from the database
+        """
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
+        shorten_url_id = ShortenUrl.query.filter_by(shorten_url_name="pwdse2").first().id
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        url = '/api/v1.0/shorten-urls/{}/delete'.format(shorten_url_id)
+        response = self.client.delete(url, headers=headers, data="")
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(json_response["message"] == "Successfully deleted")
+        self.assertTrue(ShortenUrl.query.filter_by(shorten_url_name="pwdse2").first().deleted)
+
+    def test_delete_deleted_shorten_url(self):
+        """
+        tests the route if it returns appropriate error response when
+        trying to delete a deleted shorten url
+        """
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
+        shorten_url = ShortenUrl.query.filter_by(shorten_url_name="pwdse2").first()
+        shorten_url.delete()
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        url = '/api/v1.0/shorten-urls/{}/delete'.format(shorten_url.id)
+        response = self.client.delete(url, headers=headers, data="")
+        json_response = json.loads(response.data.decode('utf-8'))
+        expected_response = "The shorten url has already been deleted"
+        self.assertTrue(json_response["message"] == expected_response)
+
+    def test_restore_shorten_url(self):
+        """tests the route if it restores a deleted shorten url"""
+        self.create_current_user_with_urls()
+        self.create_shorten_urls()
+        shorten_url = ShortenUrl.query.filter_by(shorten_url_name="pwdse2").first()
+        shorten_url.delete()
+        headers = self.get_api_headers(self.use_token_auth(), "")
+        url = '/api/v1.0/shorten-urls/{}/restore'.format(shorten_url.id)
+        response = self.client.put(url, headers=headers, data="")
+        json_response = json.loads(response.data.decode('utf-8'))
+        expected_response = "Successfully restored"
+        self.assertTrue(json_response["message"] == expected_response)
+
+
+
 
 
 
