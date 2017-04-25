@@ -8,6 +8,12 @@ from .errors import forbidden, bad_request
 
 
 def permission(f):
+    """
+    checks the permission of the current user  trying to access an
+    endpoint resources if its not anonymous and flags an error if 
+    the user is anonymous
+    :param f:  
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if g.current_user.is_anonymous:
@@ -17,6 +23,13 @@ def permission(f):
 
 
 def admin_permission(f):
+    """
+    checks for admin permission when a user is access an endpoint
+    decorated with it and flags an error message if the user fails
+    the validation
+    :param f: 
+    :return: 
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not g.current_user.is_admin:
@@ -26,6 +39,12 @@ def admin_permission(f):
 
 
 def token_required(f):
+    """
+    this decorator checks if a token based authentication was used by
+    the user trying to access any endpoint resource.
+    :param f: 
+    :return: 
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not g.token_used:
@@ -35,6 +54,13 @@ def token_required(f):
 
 
 def catch_exceptions(f):
+    """
+    this decorator catches any other exception that wasn't 
+    caught during implementation, but might arises during its
+    execution
+    :param f: 
+    :return: 
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
