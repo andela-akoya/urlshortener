@@ -253,6 +253,17 @@ class ShortenUrl(db.Model):
         shorten_url_list = ShortenUrl.query.filter_by(is_active=True, deleted=False).all()
         return sorted(shorten_url_list, key=lambda k: ((k.visit.count()),)[0], reverse=True)
 
+    def to_json(self):
+        return {
+            "id": self.id,
+            "shorten_url_name": self.name,
+            "date_added": self.date_added,
+            "deleted": self.deleted,
+            "is_active": self.is_active,
+            "long_url": Url.query.get(self.long_url).url_name
+        }
+
+
 class Url(db.Model):
     """
     Defines the url table schema and also handling url related

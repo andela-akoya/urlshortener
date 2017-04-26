@@ -34,7 +34,7 @@ def generate_shorten_url():
         output = Url.get_shorten_url(new_url, vanity_string,
                                           shorten_url_length)
         shorten_url = Utilities.to_json(output[1], ['id', 'shorten_url_name'])
-        shorten_url["shorten_url_name"] = request.url_root + shorten_url["shorten_url_name"]
+        shorten_url["shorten_url_name"] = output[1].name
         return jsonify(message=output[0],shorten_url=shorten_url), 201
     except ValidationException as e:
         return e.broadcast()
@@ -82,7 +82,6 @@ def get_shorten_urls():
         }
     )
 
-
 @api.route('/user/urls/', strict_slashes=False)
 @auth.login_required
 def get_urls():
@@ -121,6 +120,7 @@ def get_urls_for_particular_user():
 
     )
 
+
 @api.route('/user/shorten-urls/', strict_slashes=False)
 @api.route('/api/user/shorten-urls')
 @auth.login_required
@@ -140,7 +140,6 @@ def get_short_urls_for_particular_user():
             ]
         }
     )
-
 
 @api.route('/user/shorten-urls/total/', strict_slashes=False)
 @auth.login_required
