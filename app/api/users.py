@@ -14,7 +14,7 @@ from app.models import Url, ShortenUrl, AnonymousUser, ShortenUrlVisitLogs
 @api.route('/url/shorten/', methods=['POST'], strict_slashes=False)
 @auth.login_required
 @token_required
-# @catch_exceptions
+@catch_exceptions
 def generate_shorten_url():
     """
     this function generates a shorten url and returns a response for an
@@ -84,27 +84,6 @@ def get_shorten_urls():
 
 @api.route('/user/urls/', strict_slashes=False)
 @auth.login_required
-def get_urls():
-    """ returns a list of all the long urls ordered by date of creation """
-    url_list = Url.query.order_by(desc(Url.date_added)).all()
-    return jsonify(
-        [Utilities.to_json(url, ['id', 'url_name', 'date_added']) for url in url_list]
-    )
-
-@api.route('/api/shorten-urls')
-@auth.login_required
-@permission
-def get_shorten_urls():
-    """ returns a list of all the shorten urls ordered by date of creation """
-    shorten_url_list = ShortenUrl.query.order_by(desc(ShortenUrl.date_added)).all()
-    return jsonify([Utilities.to_json(
-        shorten_url, ['id', 'url_name', 'date_added'])
-                    for shorten_url in shorten_url_list]
-    )
-
-
-@api.route('/api/user/urls')
-@auth.login_required
 @token_required
 @catch_exceptions
 def get_urls_for_particular_user():
@@ -122,7 +101,6 @@ def get_urls_for_particular_user():
 
 
 @api.route('/user/shorten-urls/', strict_slashes=False)
-@api.route('/api/user/shorten-urls')
 @auth.login_required
 @token_required
 @catch_exceptions
@@ -167,15 +145,15 @@ def get_total_urls_for_particular_user():
     return jsonify(total_urls=len(list(g.current_user.url_list)))
 
 
-@api.route('/shorten-url/<int:id>/url/', strict_slashes=False)
+@api.route('/shorten-url/<int:shorten_url_id>/url/', strict_slashes=False)
 @catch_exceptions
-def get_long_url_with_shorten_url_id(id):
+def get_long_url_with_shorten_url_id(shorten_url_id):
     """
     returns a particular long url attached to a shorten url whose primary key
     is passed as argument
     """
     try:
-        shorten_url_object = ShortenUrl.query.get_or_404(id)
+        shorten_url_object = ShortenUrl.query.get_or_404(shorten_url_id)
         if shorten_url_object.deleted:
             return custom_error("The shorten url has been deleted", "deleted")
         elif not shorten_url_object.is_active:
@@ -207,18 +185,21 @@ def get_long_url_with_shorten__url_name(shorten_url_name):
             return custom_error("The shorten url has been deactivated",
                                 "inactive")
         long_url = Url.query.get_or_404(shorten_url_object.long_url)
-        visit_log = ShortenUrlVisitLogs.create_visit_log_instance(shorten_url_object.id, request.environ["REMOTE_ADDR"], request.environ["REMOTE_PORT"])
+        visit_log = ShortenUrlVisitLogs\
+            .create_visit_log_instance(shorten_url_object.id,
+                                       request.environ["REMOTE_ADDR"],
+                                       request.environ["REMOTE_PORT"])
         shorten_url_object.visits.append(visit_log)
         return jsonify(Utilities.to_json(long_url, ['id', 'url_name',
                                                     'date_added']))
     except NotFound:
         return page_not_found("Requested resource was not found")
 
-@api.route('/shorten-urls/<int:id>/url/update/', methods=['PUT'], strict_slashes=False)
+@api.route('/shorten-urls/<int:shorten_url_id>/url/update/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
 @token_required
 @catch_exceptions
-def update_shorten_url_target(id):
+def update_shorten_url_target(shorten_url_id):
     """
     updates a particular long url attached to a shorten url whose primary key
     is passed as argument
@@ -229,12 +210,12 @@ def update_shorten_url_target(id):
         Utilities.check_data_validity(data, ["url", "csrf_token", "submit"])
         Url.check_validity(data["url"])
         new_long_url = data["url"]
-        shorten_url = ShortenUrl.query.get_or_404(id)
+        shorten_url = ShortenUrl.query.get_or_404(shorten_url_id)
         shorten_url.confirm_user()
         shorten_url_target = Url.query.get_or_404(shorten_url.long_url)
         ShortenUrl.update_target_url(shorten_url, shorten_url_target,
                                      new_long_url)
-        shorten_url = ShortenUrl.query.get_or_404(id)
+        shorten_url = ShortenUrl.query.get_or_404(shorten_url_id)
         return jsonify({
             "id": shorten_url.id,
             "shorten_url_name": shorten_url.shorten_url_name,
@@ -248,16 +229,16 @@ def update_shorten_url_target(id):
     except UrlValidationException as e:
         return e.broadcast()
 
-@api.route('/shorten-urls/<int:id>/activate/', methods=['PUT'], strict_slashes=False)
-@api.route('/shorten-urls/<int:id>/deactivate/', methods=['PUT'], strict_slashes=False)
+@api.route('/shorten-urls/<int:shorten_url_id>/activate/', methods=['PUT'], strict_slashes=False)
+@api.route('/shorten-urls/<int:shorten_url_id>/deactivate/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
 @token_required
 @catch_exceptions
-def activate_shorten_url(id):
+def activate_shorten_url(shorten_url_id):
     """this function activates or deactivates a shorten_url"""
     action_to_perform = request.path.split("/")[5]
     try:
-        shorten_url = ShortenUrl.query.get_or_404(id)
+        shorten_url = ShortenUrl.query.get_or_404(shorten_url_id)
         shorten_url.confirm_user()
         if action_to_perform == "activate":
             return shorten_url.activate()
@@ -304,28 +285,28 @@ def get_user_data():
                                                       "date_added", "id"]))
 
 
-@api.route('/shorten-urls/<int:id>/delete/', methods=['DELETE'], strict_slashes=False)
+@api.route('/shorten-urls/<int:shorten_url_id>/delete/', methods=['DELETE'], strict_slashes=False)
 @auth.login_required
 @token_required
 @catch_exceptions
-def delete_shorten_url(id):
+def delete_shorten_url(shorten_url_id):
     """this function deletes a shorten_url using its id"""
     try:
-        shorten_url = ShortenUrl.query.get_or_404(id)
+        shorten_url = ShortenUrl.query.get_or_404(shorten_url_id)
         shorten_url.confirm_user()
         return shorten_url.delete()
     except NotFound:
         return page_not_found("The resource you seek to delete doesn't exist")
 
 
-@api.route('/shorten-urls/<int:id>/restore/', methods=['PUT'], strict_slashes=False)
+@api.route('/shorten-urls/<int:shorten_url_id>/restore/', methods=['PUT'], strict_slashes=False)
 @auth.login_required
 @token_required
 @catch_exceptions
-def revert_delete_shorten_url(id):
+def revert_delete_shorten_url(shorten_url_id):
     """this function reverts the deletion of a shorten_url using its id"""
     try:
-        shorten_url = ShortenUrl.query.get_or_404(id)
+        shorten_url = ShortenUrl.query.get_or_404(shorten_url_id)
         shorten_url.confirm_user()
         return shorten_url.revert_delete()
     except NotFound:
