@@ -204,7 +204,7 @@ class APITestCase(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response['message'] ==
-                        "Empty data are not acceptable")
+                        "Empty data is not acceptable")
 
     def test_json_data_with_invalid_keys(self):
         """
@@ -366,7 +366,7 @@ class APITestCase(unittest.TestCase):
         response = self.client.post(url_for('api.generate_shorten_url'),
                                     headers=headers, data=data)
         json_response = json.loads(response.data.decode('utf-8'))
-        excepted_output = "Only token validation are acceptable"
+        excepted_output = "Only token validation is acceptable"
         self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response['message'] == excepted_output)
 
@@ -461,9 +461,9 @@ class APITestCase(unittest.TestCase):
         headers = self.get_api_headers(self.use_token_auth(), "")
         response = self.client.get("/api/v1.0/shorten-urls/popularity", headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(json_response["shorten_url_list"][0]["shorten_url_name"], "re234e")
-        self.assertEqual(json_response["shorten_url_list"][1]["shorten_url_name"], "1Qewt4")
-        self.assertEqual(json_response["shorten_url_list"][2]["shorten_url_name"], "pwdse2")
+        self.assertEqual(json_response["shorten_url_list"][0]["shorten_url_name"].split("/")[-1], "re234e")
+        self.assertEqual(json_response["shorten_url_list"][1]["shorten_url_name"].split("/")[-1], "1Qewt4")
+        self.assertEqual(json_response["shorten_url_list"][2]["shorten_url_name"].split("/")[-1], "pwdse2")
 
     def test_get_long_url_with_shorten_url_id(self):
         """
@@ -490,7 +490,7 @@ class APITestCase(unittest.TestCase):
         self.create_current_user_with_urls()
         self.create_shorten_urls()
         headers = self.get_api_headers("koyexes", "password")
-        url = '/api/v1.0/shorten-url/{}/url'.format(3)
+        url = '/api/v1.0/shorten-url/{}/url'.format(4)
         response = self.client.get(url, headers=headers)
         json_response = json.loads(response.data.decode('utf-8'))
         expected_output = "Requested resource was not found"
@@ -722,7 +722,7 @@ class APITestCase(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response['message'] == "Only token validation "
-                                                    "are acceptable")
+                                                    "is acceptable")
 
     def test_activate_shorten_url_by_anonymous_user(self):
         """
@@ -738,7 +738,7 @@ class APITestCase(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         self.assertTrue(response.status_code == 400)
         self.assertTrue(json_response['message'] == "Only token validation "
-                                                    "are acceptable")
+                                                    "is acceptable")
 
 
     def test_deactivate_or_activate_invalid_shorten_url_id(self):

@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/andela-akoya/urlshortener.svg?branch=front-end-design)](https://travis-ci.org/andela-akoya/urlshortener)
+[![Coverage Status](https://coveralls.io/repos/github/andela-akoya/urlshortener/badge.svg?branch=front-end-design)](https://coveralls.io/github/andela-akoya/urlshortener?branch=front-end-design)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/andela-akoya/urlshortener/badges/quality-score.png?b=front-end-design)](https://scrutinizer-ci.com/g/andela-akoya/urlshortener/?branch=front-end-design)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Coverage Status](https://coveralls.io/repos/github/andela-akoya/urlshortener/badge.svg?branch=front-end-design)](https://coveralls.io/github/andela-akoya/urlshortener?branch=front-end-design)
 # Nitly
 Nitly is a REST API that allows users to shorten long urls into nicely formatted short URLs that can be customized using a user's vanity string of choice and also has the option of specifying the desired length of the short url. 
 This repository contains a fully working API project that communicates seamlessly with the UrlShortener service. This API accepts only `JSON` objects as input. The API service requires authentication for easy access to the resources provided.
