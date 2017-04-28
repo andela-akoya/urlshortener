@@ -27,8 +27,8 @@ def create_app(config_name):
     mail.init_app(app)  # initializes for mailing functionaries.
     login_manager.init_app(app)  # initializes for login management
 
-    from .api import api as api_blueprint
-    from .main import main as main_blueprint
-    app.register_blueprint(main_blueprint)  # registers web interface blueprint to app
-    app.register_blueprint(api_blueprint, url_prefix='/api/v1.0')  # registers api blueprint to app
+    from .api import api
+    from .main import main
+    app.register_blueprint(main)  # registers web interface blueprint to app
+    app.register_blueprint(api, url_prefix='/api/v1.0')  # registers api blueprint to app
     return app

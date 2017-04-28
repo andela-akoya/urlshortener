@@ -3,4 +3,4 @@ from flask import Blueprint
 
 api = Blueprint('api', __name__)
 
-from . import authentication, users, custom_exceptions, errors, utilities
+from . import authentication, views, custom_exceptions, errors, utils, urls

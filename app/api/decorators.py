@@ -7,21 +7,6 @@ from .custom_exceptions import ServerException
 from .errors import forbidden, bad_request
 
 
-def permission(f):
-    """
-    checks the permission of the current user  trying to access an
-    endpoint resource if its not anonymous and flags an error if 
-    the user is anonymous
-    :param f:  
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if g.current_user.is_anonymous:
-            return forbidden("You are not authorized to use this service")
-        return f(*args, **kwargs)
-    return decorated_function
-
-
 def admin_permission(f):
     """
     checks for admin permission when a user tries to access an endpoint
@@ -47,7 +32,7 @@ def token_required(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not g.token_used:
+        if not g.token_sent:
             return bad_request("Only token validation is acceptable")
         return f(*args, **kwargs)
     return decorated_function
@@ -56,7 +41,7 @@ def token_required(f):
 def catch_exceptions(f):
     """
     this decorator catches any other exception that wasn't 
-    caught during implementation, but might arises during its
+    caught during implementation, but might arise during its
     execution
     :param f: 
     :return: 
@@ -66,7 +51,8 @@ def catch_exceptions(f):
         try:
             res = f(*args, **kwargs)
         except Exception:
-            return ServerException("Something went wrong. "
+            return ServerException("Oops! An error occurred: "
+                                   "Something went wrong. "
                                    "We will work on fixing "
                                    "that right away.").broadcast()
         return res

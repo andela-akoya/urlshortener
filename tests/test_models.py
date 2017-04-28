@@ -6,8 +6,7 @@ import unittest
 from flask import g
 
 from app import create_app, db
-from app.api.custom_exceptions import (ValidationException,
-                                       UrlValidationException)
+from app.api.custom_exceptions import ValidationException
 from app.models import User, Url, ShortenUrl, AnonymousUser
 
 
@@ -35,7 +34,7 @@ class UserModelTestCase(unittest.TestCase):
         self.user.password = "password"
         self.assertTrue(self.user.password_hash is not None)
 
-    def test_hash_password(self):
+    def test_password_is_hashed(self):
         """tests if password supplied was really hashed."""
         self.user.password = "password"
         self.assertFalse(self.user.password_hash == "password")
@@ -91,7 +90,7 @@ class UserModelTestCase(unittest.TestCase):
         self.user.password = "password"
         db.session.add(self.user)
         db.session.commit()
-        token = self.user.generate_auth_token(3600)[1]
+        token = self.user.generate_auth_token(3600)
         self.assertTrue(User.verify_auth_token(token))
 
     def test_verification_for_actual_user(self):
@@ -102,7 +101,7 @@ class UserModelTestCase(unittest.TestCase):
         self.user.password = "password"
         db.session.add(self.user)
         db.session.commit()
-        token = self.user.generate_auth_token(3600)[1]
+        token = self.user.generate_auth_token(3600)
         self.assertEqual(User.verify_auth_token(token),  self.user)
 
     def test_invalid_verification_of_auth_token(self):
@@ -170,7 +169,7 @@ class UserModelTestCase(unittest.TestCase):
 
     def test_get_from_json(self):
         """
-        tests the get_from_json if it returns an object instance if json
+        tests the convert_json_to_user_object if it returns an object instance if json
         formatted data is passed in as argument
         """
         json_data = {
@@ -181,11 +180,11 @@ class UserModelTestCase(unittest.TestCase):
             'password': 'password'
         }
 
-        self.assertIsInstance(User.get_from_json(json_data), User)
+        self.assertIsInstance(User.convert_json_to_user_object(json_data), User)
 
     def test_get_from_json_for_data_allocation(self):
         """
-        tests the get_from_json if it properly allocates the right
+        tests the convert_json_to_user_object if it properly allocates the right
         data to the appropriate object property
         """
         json_data = {
@@ -196,7 +195,7 @@ class UserModelTestCase(unittest.TestCase):
             'password': 'password'
         }
 
-        user = User.get_from_json(json_data)
+        user = User.convert_json_to_user_object(json_data)
         self.assertTrue(user.username == "koyexes")
         self.assertEqual(user.lastname, "koya")
         self.assertFalse(user.email == "password")
@@ -315,9 +314,9 @@ class UrlModelTestCase(unittest.TestCase):
         tests the function if it raises a UrlValidationException if an
         invalid url is passed as argument
         """
-        expected_output = "Invalid url (Either url is empty or invalid." \
-                          " (Url must include either http:// or https://))"
-        with self.assertRaises(UrlValidationException) as context:
+        expected_output = ("Invalid url (Either url is empty or invalid."
+                           " (Url must include either http:// or https://))")
+        with self.assertRaises(ValidationException) as context:
             Url.check_validity("htt://web")
             self.assertEqual(expected_output, context.exception.message)
 
@@ -385,7 +384,7 @@ class UrlModelTestCase(unittest.TestCase):
         """
         g.current_user = self.user
         output = Url.get_shorten_url(self.url, None, None)
-        self.assertIsInstance(output[1], ShortenUrl)
+        self.assertIsInstance(output, ShortenUrl)
 
     def test_get_shorten_url_with_vanity_string(self):
         """
@@ -393,7 +392,7 @@ class UrlModelTestCase(unittest.TestCase):
         argument as the shorten url rather than generating a short url
         """
         output = Url.get_shorten_url(self.url, "facebk", None)
-        self.assertEqual(output[1].name.split("/")[-1], "facebk")
+        self.assertEqual(output.name.split("/")[-1], "facebk")
 
     def test_get_shorten_url_with_short_url_length(self):
         """
@@ -401,7 +400,7 @@ class UrlModelTestCase(unittest.TestCase):
         equal to the value of the short_url_length argument.
         """
         output = Url.get_shorten_url(self.url, None, 10)
-        self.assertEqual(len(output[1].name.split("/")[-1]), 10)
+        self.assertEqual(len(output.name.split("/")[-1]), 10)
 
     def test_delete_long_url(self):
         """

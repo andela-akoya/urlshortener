@@ -1,8 +1,9 @@
 # coding=utf-8
 import json
+from datetime import datetime
 
-from flask import (render_template, request, redirect,
-                   url_for, current_app, session)
+from flask import (current_app, redirect, render_template, request,
+                   session, url_for)
 from flask_login import login_required, logout_user, login_user, UserMixin
 
 from . import main
@@ -19,9 +20,9 @@ def update_context(data, context):
     """
     this function updates context dictionary
     with data passed in as argument.
-    :param data: 
-    :param context: 
-    :return dict: 
+    :param data:
+    :param context:
+    :return dict:
     """
     for key, value in data.items():
         context[key] = value
@@ -53,15 +54,18 @@ def homepage():
         return redirect("/main/dashboard")
     register_form = RegistrationForm()
     login_form = LoginForm()
-    context = {"title": "Nitly", "registerForm": register_form,
-               "loginForm": login_form}
+    context = {
+        "title": "Nitly",
+        "registerForm": register_form,
+        "loginForm": login_form
+    }
     return render_template("index/homepage.html", context=context)
 
 
 @main.route('/start_session/', methods=["POST"], strict_slashes=False)
 def login():
     data = request.json
-    if request.method == "POST" and "token" in data:
+    if "token" in data:
         user = User(data["id"])
         login_user(user, force=True)
         session[str(user.id)] = data

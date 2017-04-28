@@ -43,25 +43,20 @@ class Utilities:
             raise ValidationException("The following {} are not valid keys"
                                       .format(invalid_keys))
         for key, values in data.items():
-            if key in data and not (data[key]):
+            if not (data[key]):
                 raise ValidationException("{} can't be empty".format(key))
+        if "password" in data:
+            Utilities.check_password_equality(data["password"],
+                                              data["confirm_password"])
 
     @staticmethod
     def check_password_equality(password1, password2):
         """
-        checks the equality of the passwords passed through the data and
-        raises an error if the not equal
+        checks if password1 equals to password2 and
+        raises an error if they are  not equal
         """
         if password1 != password2:
             raise ValidationException("Passwords don't match")
-
-    @staticmethod
-    def to_json(data, keys):
-        """converts dictionaries into its json equivalent"""
-        data = data.__dict__
-        for key in list(set(data.keys()).difference(keys)):
-            del data[key]
-        return data
 
     @staticmethod
     def validate_vanity_string(vanity_string):

@@ -11,8 +11,7 @@ from werkzeug.exceptions import NotFound
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db
-from app.api.custom_exceptions import (ValidationException,
-                                       UrlValidationException)
+from app.api.custom_exceptions import ValidationException
 from app.api.errors import bad_request
 from app.api.shortener import Shortener
 
@@ -58,7 +57,7 @@ class AnonymousUser(AnonymousUserMixin):
 user_url = db.Table('user_url',
                     db.Column('user_id', db.Integer,
                               db.ForeignKey('users.id')),
-                    db.Column('urls_id', db.Integer,
+                    db.Column('url_id', db.Integer,
                               db.ForeignKey('url.id')))
 
 
@@ -109,7 +108,7 @@ class User(db.Model, UserMixin):
     @property
     def short_url_list(self):
         """
-        returns a list of all the long urls belonging to a 
+        returns a list of all the short urls belonging to a 
         particular user
         :return list_of_shortened_urls: 
         """
@@ -133,7 +132,7 @@ class User(db.Model, UserMixin):
         """
         s = Serializer(current_app.config['SECRET_KEY'],
                        expires_in=expiration)
-        return [s.now(), s.dumps({'id': self.id}).decode('ascii')]
+        return s.dumps({'id': self.id}).decode('ascii')
 
     @staticmethod
     def verify_auth_token(token):
@@ -173,7 +172,7 @@ class User(db.Model, UserMixin):
         return User.query.filter_by(email=email).first()
 
     @staticmethod
-    def get_from_json(json_data):
+    def convert_json_to_user_object(json_data):
         """
         converts a json formatted data into a User model Object
         :param json_data: 
@@ -193,6 +192,7 @@ class User(db.Model, UserMixin):
         """
         db.session.add(user)
         db.session.commit()
+        return user
 
     @staticmethod
     def check_username_uniqueness(username):
@@ -222,6 +222,17 @@ class User(db.Model, UserMixin):
         """deletes a user from the database"""
         db.session.delete(self)
         db.session.commit()
+
+    def to_dict(self):
+        """this function returns  a json format of a ShortUrl model object"""
+        return {
+            "id": self.id,
+            "username": self.username,
+            "lastname": self.lastname,
+            "firstname": self.firstname,
+            "email": self.email
+        }
+
 
 class ShortenUrl(db.Model):
     """
@@ -297,13 +308,8 @@ class ShortenUrl(db.Model):
         :param vanity_string: 
         :return Error messages if the vanity string already exists in the database: 
         """
-        if g.current_user.is_anonymous and vanity_string:
-            raise ValidationException("Only registered users are liable "
-                                      "to use vanity string")
-        elif ShortenUrl.get_short_url_by_name(vanity_string):
-            raise ValidationException("The vanity string '{}' is already in "
-                                      "use. Please input another vanity string"
-                                      .format(vanity_string))
+        bool(ShortenUrl.get_short_url_by_name(vanity_string))
+
 
     def confirm_user(self):
         """
@@ -322,7 +328,9 @@ class ShortenUrl(db.Model):
             return bad_request("The shorten url has already been deleted")
         self.deleted = True
         db.session.commit()
-        return jsonify({"message": "Successfully deleted"})
+        return jsonify(
+            {"message": "The shorten url has been successfully deleted"}
+        )
 
     def revert_delete(self):
         """
@@ -334,7 +342,9 @@ class ShortenUrl(db.Model):
                                "shorten url that hasn't been deleted")
         self.deleted = False
         db.session.commit()
-        return jsonify({"message": "Successfully restored"})
+        return jsonify(
+            {"message": "The shorten url has been successfully restored"}
+        )
 
     def activate(self):
         """
@@ -359,7 +369,7 @@ class ShortenUrl(db.Model):
         return jsonify({"message": "Successfully deactivated"})
 
     @staticmethod
-    def update_target_url(shorten_url, shorten_url_target, new_long_url):
+    def update_long_url(shorten_url, shorten_url_target, new_long_url):
         """
         this function updates the long url mapped to a shorten url to the 
         value of the new_long_url argument.
@@ -404,7 +414,7 @@ class ShortenUrl(db.Model):
         shorten_url_list = ShortenUrl.query.filter_by(is_active=True, deleted=False).all()
         return sorted(shorten_url_list, key=lambda k: ((k.visit.count()),)[0], reverse=True)
 
-    def to_json(self):
+    def to_dict(self):
         """this function returns  a json format of a ShortUrl model object"""
         return {
             "id": self.id,
@@ -453,9 +463,9 @@ class Url(db.Model):
         :param new_url: 
         """
         if not url(new_url):
-            raise UrlValidationException("Invalid url (Either url is empty"
-                                         " or of invalid format. (Url must include"
-                                         " either http:// or https://))")
+            raise ValidationException("Invalid url (Either url is empty"
+                                      " or of invalid format. (Url must include"
+                                      " either http:// or https://))")
 
     @staticmethod
     def get_from_json(json_data):
@@ -495,29 +505,28 @@ class Url(db.Model):
         """
         existing_long_url = Url.get_url_by_name(new_url.name)
         if existing_long_url and existing_long_url in g.current_user.url:
-            return ["Shorten Url already exist for this long url",
-                    list(set(existing_long_url.short_url)
-                         .intersection(g.current_user.short_url))[0]
-                    ]
-        shorten_url_name = Shortener.generate_shorten_name(short_url_length) \
+            raise ValidationException(
+                "Shorten Url already exist for this long url: {}"
+                    .format(list(set(existing_long_url.short_url)
+                                 .intersection(g.current_user.short_url))[0].name))
+        shorten_url_name = Shortener.generate_short_name(short_url_length) \
             if not vanity_string else vanity_string
         while ShortenUrl.get_short_url_by_name(shorten_url_name):
             shorten_url_name = Shortener\
-                                .generate_shorten_name(short_url_length)
+                                .generate_short_name(short_url_length)
         if existing_long_url and not(existing_long_url in g.current_user.url):
             Url.save(existing_long_url, shorten_url_name)
         else:
             Url.save(new_url, shorten_url_name)
-        return ["Url successful shoretened",
-                ShortenUrl.get_short_url_by_name(shorten_url_name)]
+        return ShortenUrl.get_short_url_by_name(shorten_url_name)
 
     @staticmethod
-    def save(url, shorten_url_name):
+    def save(long_url, shorten_url_name):
         """this function saves a long url to the database"""
-        g.current_user.url.append(url)
+        g.current_user.url.append(long_url)
         db.session.commit()
         ShortenUrl.save(shorten_url_name=shorten_url_name,
-                        user=g.current_user, long_url=url)
+                        user=g.current_user, long_url=long_url)
 
     def delete(self):
         """this function deletes long url from the database"""
@@ -528,6 +537,14 @@ class Url(db.Model):
     def get_all_urls_by_dated_added():
         """returns all long urls sorted by the date they were added"""
         return Url.query.order_by(db.desc(Url.date_added)).all()
+
+    def to_dict(self):
+        """this function returns  a json format of a ShortUrl model object"""
+        return {
+            "id": self.id,
+            "url_name": self.url_name,
+            "date_added": self.date_added,
+        }
 
 
 class ShortenUrlVisitLogs(db.Model):
@@ -569,7 +586,7 @@ class Token(db.Model):
     expiration_time = db.Column(db.Integer, nullable=False)
 
     @staticmethod
-    def check_existence_of_valid_token(user_id):
+    def get_token_details(user_id):
         """
         checks if a valid token exist in the database for a particular user
         whose user id is passed as argument.
