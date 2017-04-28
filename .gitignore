@@ -1,6 +1,1 @@
-.idea/
-__pycache__/
-*.sqlite
-tmp/
-migrations/
-.env
+
