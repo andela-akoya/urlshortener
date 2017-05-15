@@ -57,10 +57,11 @@ $('#loginForm').on('submit', function(e) {
                     functions.get_total_shorten_urls(function() {
                         functions.get_user(function() {
                             data = Object.assign(data, user_data, total_long_urls, total_shorten_urls, payload);
+                            console.log(data);
                             $.post("/start_session/", JSON.stringify(data))
                                 .done(function(data) {
                                     window.location.href = "/main/dashboard";
-                                    window.history.pushState("/main/dashboard", "Dashboard", "/dashboard");
+                                    window.history.pushState("/main/dashboard", "Dashboard", "/main/dashboard");
                                 });
                         });
                     });

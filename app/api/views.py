@@ -130,7 +130,7 @@ def get_total_urls_for_particular_user():
     have shortened
     :return total: 
     """
-    return jsonify(total_urls=len(list(g.current_user.url_list)))
+    return jsonify(total_urls=(g.current_user.url_list).count())
 
 
 @catch_exceptions
