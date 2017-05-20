@@ -1,0 +1,72 @@
+{% extends "index/base.html" %}
+{% block content %}
+            <div class="homepage-hero-module" xmlns="http://www.w3.org/1999/html">
+                <div class="video-container">
+                    <div class="filter">
+                        <nav class="" role="navigation" style="box-shadow: none; background-color: #333; line-height: 60px;">
+                            <div class="nav-wrapper container ">
+                              <a id="logo-container" href="#" class="brand-logo white-text" >Nitly</a>
+                            </div>
+                        </nav>
+                    </div>
+                    <div class="title-container">
+                        <div class="slider " >
+                            <ul class="slides" style="background-color: transparent;">
+                                <li>
+                                    <div class="caption right-align">
+                                      <h3>MEASURE</h3>
+                                      <h5 class="light grey-text text-lighten-3">
+                                         Track individual link analytics, gather audience <br> intelligence and measure campaign performance <br>in one location.
+                                      </h5>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="caption left-align">
+                                      <h3>SHORTEN</h3>
+                                      <h5 class="light grey-text text-lighten-3">
+                                          Shorten, brand and optimize your links across <br>devices and channels. Share them via Nitly, API or <br>partner integrations.
+                                      </h5>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="caption center-align">
+                                      <h3>UNLEASH THE POWER OF THE LINK</h3>
+                                      <h5 class="light grey-text text-lighten-3">Links are everywhere. Within every channel and every platform. Only Nitlinks are <br>powerful enough to allow you to see clear across the internet.</h5>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="caption center-align">
+                                      <h3>THE LINK KNOWS ALL. SO CAN YOU.</h3>
+                                      <h5 class="light grey-text text-lighten-3">Measure your links with Nitly, the world's leading link management platform.</h5>
+                                    </div>
+                                </li>
+                            </ul>
+
+                        </div>
+
+                    </div>
+                    <video autoplay loop class="fillWidth">
+                        <source src="{{ url_for('static', filename='videos/Working-it/Mp4/Working-it.mp4') }}" type="video/mp4" />Your browser does not support the video tag. I suggest you upgrade your browser.
+                        <source src="{{ url_for('static', filename='videos/Working-it/Webm/Working-it.webm') }}" type="video/webm" />Your browser does not support the video tag. I suggest you upgrade your browser.
+                        <source src="{{ url_for('static', filename='videos/Working-it/Ogv/Working-it.Ogv') }}" type="video/webm" />Your browser does not support the video tag. I suggest you upgrade your browser.
+                    </video>
+                    <div class="poster hidden" style="text-align: center;">
+                        <div class="row"><a href="" id="get-started-button" class="btn-large waves-effect waves-light teal lighten-1">Get Started</a></div>
+                        <a href="/homepage" >www.nitly.com</a>
+                    </div>
+                </div>
+            </div>
+    </div>
+{% endblock content %}
+{% block script %}
+    <script src="{{ url_for('static', filename='js/index_background_video.js')}}"></script>
+    <script>
+         $("#get-started-button").on("click", function () {
+            $("body").load("/homepage", "");
+            window.history.pushState("/homepage", "Homepage", "/homepage" );
+        });
+    </script>
+
+
+{% endblock script %}
+

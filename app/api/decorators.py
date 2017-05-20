@@ -1,0 +1,59 @@
+# coding=utf-8
+from functools import wraps
+
+from flask import g
+
+from .custom_exceptions import ServerException
+from .errors import forbidden, bad_request
+
+
+def admin_permission(f):
+    """
+    checks for admin permission when a user tries to access an endpoint
+    decorated with it and flags an error message if the user fails
+    the validation
+    :param f: 
+    :return: 
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not g.current_user.is_admin:
+            return forbidden("You are not authorized to use this service")
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def token_required(f):
+    """
+    this decorator checks if a token based authentication was used by
+    the user trying to access any endpoint resource.
+    :param f: 
+    :return: 
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not g.token_sent:
+            return bad_request("Only token validation is acceptable")
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def catch_exceptions(f):
+    """
+    this decorator catches any other exception that wasn't 
+    caught during implementation, but might arise during its
+    execution
+    :param f: 
+    :return: 
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            res = f(*args, **kwargs)
+        except Exception:
+            return ServerException("Oops! An error occurred: "
+                                   "Something went wrong. "
+                                   "We will work on fixing "
+                                   "that right away.").broadcast()
+        return res
+    return decorated_function

@@ -1,0 +1,90 @@
+{% extends "index/base.html" %}
+{%  from 'index/form_macros.html' import render_signup %}
+{% from 'index/form_macros.html' import render_login %}
+{% block title %}
+    {{ context.title }}
+{% endblock %}
+{% block login %}<li><a class="waves-effect waves-light btn" href="#loginModal">Login</a></li>{% endblock %}
+{% block signup %}<li><button class="waves-effect waves-light btn" data-target="signupModal">Sign up</button></li>{% endblock %}
+{% block login_mobile %}<li><a class="waves-effect waves-light btn" href="#loginModal">Login</a></li>{% endblock %}
+{% block signup_mobile %}<li><button class="waves-effect waves-light btn" data-target="signupModal">Sign up</button></li>{% endblock %}
+{%  block signupModal %}
+<!-- Modal Structure -->
+<div id="loginModal" class="modal" style="max-width: 350px;">
+    <a class="btn-floating btn-small waves-effect waves-light red  modal-close" style="float: right"><i class="material-icons">clear</i></a>
+    <div class="modal-content ">
+      <h5>Login </h5>
+      <div class="row">
+        <form id="loginForm" class="col s12" method="POST" action="">
+          <div class="row">
+              {{ context.loginForm.hidden_tag() }}
+              {{ render_login(context.loginForm.username, class="validate", required="True") }}
+              {{ render_login(context.loginForm.password, class="validate", required="True") }}
+              <button class="btn waves-effect waves-light col s12" type="submit" name="submit" value="submit">Login
+                <i class="material-icons right">send</i>
+              </button>
+
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+ <div id="signupModal" class="modal bottom-sheet">
+    <a class="btn-floating btn-small waves-effect waves-light red  modal-close" style="float: right"><i class="material-icons">clear</i></a>
+    <div class="modal-content ">
+      <h5>Create an Account </h5>
+      <div class="row">
+        <form id="signupForm" class="col s12" method="post" action="">
+          <div class="row">
+              {{ context.registerForm.hidden_tag() }}
+              {{ render_signup(context.registerForm.lastname, class="validate ", required="True") }}
+              {{ render_signup(context.registerForm.firstname, class="validate ", required="True") }}
+              {{ render_signup(context.registerForm.email, class="validate ", required="True", type="email") }}
+              {{ render_signup(context.registerForm.username, class="validate ", required="True") }}
+              {{ render_signup(context.registerForm.password, class="validate ", required="True") }}
+              {{ render_signup(context.registerForm.confirm_password, class="validate ", required="True") }}
+              <button class="btn waves-effect waves-light col s2 push-s10" type="submit" name="submit" value="submit">Register
+                <i class="material-icons right">send</i>
+              </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+{% block script %}
+ <script>
+      $(document).ready(function(){
+        var pathName = window.location.pathname;
+        $('.modal').modal();
+        if (pathName === "/register"){
+            $('#signupModal').modal('open');
+        }
+        else if(pathName === "/login"){
+            $('#loginModal').modal('open');
+            {% with messages = get_flashed_messages() %}
+                  {% if messages %}
+                      {% for message in messages %}
+                          Materialize.toast("{{ message }}", 4000, 'rounded');
+                          $('#toast-container div').css("background-color", "#d32f2f");
+                      {% endfor %}
+                  {% endif %}
+            {% endwith %}
+        }
+
+         var options = [
+              {selector: '#image1', offset: 10, callback: function(el) {
+                Materialize.fadeInImage($(el));
+              } },
+             {selector: '#url-stats', offset: 80, callback: function(el) {
+                Materialize.fadeInImage($(el));
+              } }
+         ];
+         Materialize.scrollFire(options);
+
+      });
+ </script>
+
+{% endblock %}
