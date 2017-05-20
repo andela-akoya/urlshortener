@@ -1,0 +1,13 @@
+{% macro render_login(field) %}
+    <div class="input-field validate col s12 ">
+        {{ field.label }}
+        {{ field(**kwargs)|safe }}
+    </div>
+{% endmacro %}
+{% macro render_signup(field) %}
+    <div class="input-field validate col s12 m12 l6">
+        {{ field.label }}
+        {{ field(**kwargs)|safe }}
+    </div>
+{% endmacro %}
+
